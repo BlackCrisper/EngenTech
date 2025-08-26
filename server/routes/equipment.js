@@ -31,14 +31,14 @@ router.get('/', async (req, res) => {
             FROM (
               SELECT 
                 child.id,
-                AVG(COALESCE(p.currentProgress, 0)) as averageProgress
+                AVG(COALESCE(et.currentProgress, 0)) as averageProgress
               FROM Equipment child
-              LEFT JOIN Progress p ON child.id = p.equipmentId
+              LEFT JOIN EquipmentTasks et ON child.id = et.equipmentId
               WHERE child.parentTag = e.tag
               GROUP BY child.id
             ) child_progress
           )
-          ELSE AVG(p.currentProgress)
+          ELSE AVG(et.currentProgress)
         END as averageProgress,
         CASE 
           WHEN e.isParent = 1 THEN (
@@ -46,19 +46,36 @@ router.get('/', async (req, res) => {
             FROM Equipment child
             WHERE child.parentTag = e.tag
           )
-          ELSE COUNT(p.id)
-        END as progressCount
+          ELSE COUNT(et.id)
+        END as progressCount,
+        -- Determinar disciplina principal baseada na maioria das tarefas
+        CASE 
+          WHEN e.isParent = 0 THEN (
+            SELECT TOP 1 et2.discipline
+            FROM EquipmentTasks et2
+            WHERE et2.equipmentId = e.id
+            GROUP BY et2.discipline
+            ORDER BY COUNT(*) DESC
+          )
+          ELSE NULL
+        END as primaryDiscipline
       FROM Equipment e
       JOIN Areas a ON e.areaId = a.id
-      LEFT JOIN Progress p ON e.id = p.equipmentId
+      LEFT JOIN EquipmentTasks et ON e.id = et.equipmentId
       WHERE 1=1
     `;
 
     const params = [];
 
     if (area) {
-      query += ' AND a.name LIKE @area';
-      params.push({ name: 'area', type: sql.NVarChar, value: `%${area}%` });
+      // Verificar se é um ID numérico ou nome
+      if (!isNaN(area)) {
+        query += ' AND a.id = @areaId';
+        params.push({ name: 'areaId', type: sql.Int, value: parseInt(area) });
+      } else {
+        query += ' AND a.name LIKE @area';
+        params.push({ name: 'area', type: sql.NVarChar, value: `%${area}%` });
+      }
     }
 
     query += ' GROUP BY e.id, e.tag, e.type, e.areaId, e.description, e.createdAt, e.isParent, e.hierarchyLevel, e.parentTag, a.name ORDER BY e.hierarchyLevel, e.tag';
@@ -84,38 +101,15 @@ router.get('/', async (req, res) => {
       parentTag: item.parentTag,
       averageProgress: Math.round(item.averageProgress || 0),
       progressCount: item.progressCount || 0,
+      primaryDiscipline: item.primaryDiscipline, // Nova propriedade
       createdAt: item.createdAt,
       updatedAt: item.createdAt,
       children: [] // Será preenchido abaixo
     }));
 
-    // Organizar em hierarquia
-    const equipmentMap = new Map();
-    const rootEquipment = [];
-
-    // Primeiro, criar mapa de todos os equipamentos
-    allEquipment.forEach(equipment => {
-      equipmentMap.set(equipment.equipmentTag, equipment);
-    });
-
-    // Depois, organizar hierarquia
-    allEquipment.forEach(equipment => {
-      if (equipment.hierarchyLevel === 0 || !equipment.parentTag) {
-        // Equipamento pai
-        rootEquipment.push(equipment);
-      } else {
-        // Equipamento filho
-        const parent = equipmentMap.get(equipment.parentTag);
-        if (parent) {
-          parent.children.push(equipment);
-        } else {
-          // Se não encontrar o pai, adicionar como raiz
-          rootEquipment.push(equipment);
-        }
-      }
-    });
-
-    res.json(rootEquipment);
+    // Retornar todos os equipamentos sem organização hierárquica
+    // O frontend fará a organização
+    res.json(allEquipment);
 
   } catch (error) {
     console.error('Erro ao buscar equipamentos:', error);

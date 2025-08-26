@@ -106,6 +106,30 @@ export default function Equipment() {
     enabled: !!currentUser
   });
 
+  // Organizar equipamentos em hierarquia (pais e filhos)
+  const organizedEquipment = React.useMemo(() => {
+    const parents: Equipment[] = [];
+    const childrenMap = new Map<string, Equipment[]>();
+
+    equipment.forEach((eq: Equipment) => {
+      if (eq.isParent) {
+        parents.push({ ...eq, children: [] });
+      } else if (eq.parentTag) {
+        if (!childrenMap.has(eq.parentTag)) {
+          childrenMap.set(eq.parentTag, []);
+        }
+        childrenMap.get(eq.parentTag)!.push(eq);
+      }
+    });
+
+    // Adicionar filhos aos pais
+    parents.forEach(parent => {
+      parent.children = childrenMap.get(parent.equipmentTag) || [];
+    });
+
+    return parents;
+  }, [equipment]);
+
   // Buscar áreas para o select
   const { data: areas = [] } = useQuery({
     queryKey: ['areas'],
@@ -201,11 +225,11 @@ export default function Equipment() {
 
   // Filtrar equipamentos baseado nos filtros aplicados
   const getFilteredEquipment = () => {
-    if (!equipment || equipment.length === 0) {
+    if (!organizedEquipment || organizedEquipment.length === 0) {
       return [];
     }
 
-    return equipment.filter((item: Equipment) => {
+    return organizedEquipment.filter((item: Equipment) => {
       const matchesSearch = item.equipmentTag.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            item.areaName.toLowerCase().includes(searchTerm.toLowerCase());

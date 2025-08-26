@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit, Trash2, Search, Filter, Building2, TrendingUp, AlertTriangle, CheckCircle, Clock, Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Edit, Trash2, Search, Filter, Building2, TrendingUp, AlertTriangle, CheckCircle, Clock, Users, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,6 +29,7 @@ interface AreaFormData {
 }
 
 export default function Areas() {
+  const navigate = useNavigate();
   const { user: currentUser } = useAuth();
   const { canViewAreas, canManageAreas, getUserSector } = usePermissions();
   
@@ -442,6 +444,14 @@ export default function Areas() {
 
                   {/* Ações */}
                   <div className="flex justify-end space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/areas/${area.id}`)}
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      Visualizar
+                    </Button>
                     <UpdateGuard resource="areas">
                       <Button
                         variant="outline"

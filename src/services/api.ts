@@ -72,6 +72,7 @@ export interface Equipment {
   parentTag?: string;
   averageProgress: number;
   progressCount: number;
+  primaryDiscipline?: 'electrical' | 'mechanical' | 'civil'; // Nova propriedade
   createdAt: string;
   updatedAt: string;
   children?: Equipment[];
@@ -321,6 +322,60 @@ export const progressService = {
   getHistory: async (equipmentId: number, discipline: string) => {
     const response = await api.get(`/progress/${equipmentId}/${discipline}/history`);
     return response.data;
+  },
+
+  getByArea: async (areaId: number): Promise<Progress[]> => {
+    const response = await api.get(`/progress/area/${areaId}`);
+    return response.data;
+  },
+
+  getEquipmentTasks: async (equipmentId: number): Promise<any[]> => {
+    const response = await api.get(`/progress/equipment/${equipmentId}/tasks`);
+    return response.data;
+  },
+
+  updateProgress: async (data: {
+    equipmentId: number;
+    discipline: 'electrical' | 'mechanical' | 'civil';
+    currentProgress: number;
+    observations?: string;
+    photos?: File[];
+  }) => {
+    // Se há fotos, usar FormData, senão usar JSON
+    if (data.photos && data.photos.length > 0) {
+      const formData = new FormData();
+      formData.append('equipmentId', data.equipmentId.toString());
+      formData.append('discipline', data.discipline);
+      formData.append('currentProgress', data.currentProgress.toString());
+      if (data.observations) {
+        formData.append('observations', data.observations);
+      }
+      data.photos.forEach((photo, index) => {
+        formData.append(`photos`, photo);
+      });
+
+      const response = await api.post('/progress/update', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } else {
+      // Enviar como JSON
+      const jsonData = {
+        equipmentId: data.equipmentId,
+        discipline: data.discipline,
+        currentProgress: data.currentProgress,
+        observations: data.observations || ''
+      };
+
+      const response = await api.post('/progress/update', jsonData, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.data;
+    }
   },
 };
 

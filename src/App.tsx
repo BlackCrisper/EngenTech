@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Areas from "./pages/Areas";
+import AreaDetails from "./pages/AreaDetails";
 import Equipment from "./pages/Equipment";
 import EquipmentTasks from "./pages/EquipmentTasks";
 import Progress from "./pages/Progress";
@@ -104,6 +105,11 @@ const AppRoutes = () => (
     <Route path="/areas" element={
       <ProtectedRoute>
         <Areas />
+      </ProtectedRoute>
+    } />
+    <Route path="/areas/:areaId" element={
+      <ProtectedRoute>
+        <AreaDetails />
       </ProtectedRoute>
     } />
     <Route path="/equipment" element={

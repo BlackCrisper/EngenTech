@@ -16,11 +16,11 @@ router.get('/', async (req, res) => {
           a.code,
           a.active,
           a.createdAt,
-          COUNT(e.id) as equipmentCount,
-          AVG(p.currentProgress) as averageProgress
+          COUNT(CASE WHEN e.isParent = 0 THEN e.id END) as equipmentCount,
+          AVG(et.currentProgress) as averageProgress
         FROM Areas a
-        LEFT JOIN Equipment e ON a.id = e.areaId
-        LEFT JOIN Progress p ON e.id = p.equipmentId
+        LEFT JOIN Equipment e ON a.id = e.areaId AND e.isParent = 0
+        LEFT JOIN EquipmentTasks et ON e.id = et.equipmentId
         GROUP BY a.id, a.name, a.description, a.code, a.active, a.createdAt
         ORDER BY a.name
       `);
@@ -55,11 +55,11 @@ router.get('/:id', async (req, res) => {
       .query(`
         SELECT 
           a.*,
-          COUNT(e.id) as equipmentCount,
-          AVG(p.currentProgress) as averageProgress
+          COUNT(CASE WHEN e.isParent = 0 THEN e.id END) as equipmentCount,
+          AVG(et.currentProgress) as averageProgress
         FROM Areas a
-        LEFT JOIN Equipment e ON a.id = e.areaId
-        LEFT JOIN Progress p ON e.id = p.equipmentId
+        LEFT JOIN Equipment e ON a.id = e.areaId AND e.isParent = 0
+        LEFT JOIN EquipmentTasks et ON e.id = et.equipmentId
         WHERE a.id = @id
         GROUP BY a.id, a.name, a.description, a.code, a.active, a.createdAt
       `);
