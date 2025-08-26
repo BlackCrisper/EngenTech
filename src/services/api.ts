@@ -206,6 +206,18 @@ export const dashboardService = {
     const response = await api.get('/dashboard/progress-by-discipline');
     return response.data;
   },
+
+  // Buscar tendências de progresso
+  getProgressTrends: async () => {
+    const response = await api.get('/dashboard/progress-trends');
+    return response.data;
+  },
+
+  // Buscar equipamentos críticos
+  getCriticalEquipment: async () => {
+    const response = await api.get('/dashboard/critical-equipment');
+    return response.data;
+  },
 };
 
 // Serviços de Áreas
@@ -534,6 +546,110 @@ export const reportsService = {
   // Histórico detalhado de uma tarefa
   getTaskHistory: async (taskId: number) => {
     const response = await api.get(`/reports/task/${taskId}/history`);
+    return response.data;
+  },
+};
+
+// Serviços do Sistema
+export const systemService = {
+  // Buscar logs do sistema
+  getLogs: async (params?: {
+    page?: number;
+    limit?: number;
+    level?: string;
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.level && params.level !== 'all') queryParams.append('level', params.level);
+    if (params?.startDate) queryParams.append('startDate', params.startDate);
+    if (params?.endDate) queryParams.append('endDate', params.endDate);
+    
+    const response = await api.get(`/system/logs?${queryParams.toString()}`);
+    return response.data;
+  },
+
+  // Criar log do sistema
+  createLog: async (logData: {
+    level: string;
+    message: string;
+    details?: string;
+    userAction?: string;
+  }) => {
+    const response = await api.post('/system/logs', logData);
+    return response.data;
+  },
+
+  // Gerar backup do sistema
+  generateBackup: async () => {
+    const response = await api.get('/system/backup');
+    return response.data;
+  },
+
+  // Listar backups disponíveis
+  getBackups: async () => {
+    const response = await api.get('/system/backups');
+    return response.data;
+  },
+
+  // Download de backup
+  downloadBackup: async (fileName: string) => {
+    const response = await api.get(`/system/backups/${fileName}`, {
+      responseType: 'blob'
+    });
+    return response.data;
+  },
+
+  // Excluir backup
+  deleteBackup: async (fileName: string) => {
+    const response = await api.delete(`/system/backups/${fileName}`);
+    return response.data;
+  },
+
+  // Buscar tarefas padrão
+  getStandardTasks: async (discipline?: string) => {
+    const params = new URLSearchParams();
+    if (discipline) params.append('discipline', discipline);
+    const response = await api.get(`/system/standard-tasks?${params.toString()}`);
+    return response.data;
+  },
+
+  // Criar tarefa padrão
+  createStandardTask: async (taskData: {
+    discipline: string;
+    name: string;
+    description?: string;
+    estimatedHours?: number;
+    sortOrder?: number;
+  }) => {
+    const response = await api.post('/system/standard-tasks', taskData);
+    return response.data;
+  },
+
+  // Atualizar tarefa padrão
+  updateStandardTask: async (id: number, taskData: {
+    discipline: string;
+    name: string;
+    description?: string;
+    estimatedHours?: number;
+    sortOrder?: number;
+    isActive?: boolean;
+  }) => {
+    const response = await api.put(`/system/standard-tasks/${id}`, taskData);
+    return response.data;
+  },
+
+  // Excluir tarefa padrão
+  deleteStandardTask: async (id: number) => {
+    const response = await api.delete(`/system/standard-tasks/${id}`);
+    return response.data;
+  },
+
+  // Buscar estatísticas do sistema
+  getStats: async () => {
+    const response = await api.get('/system/stats');
     return response.data;
   },
 };
