@@ -1,19 +1,14 @@
-import { useEffect, useState } from "react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { 
   Activity, 
   AlertTriangle, 
   CheckCircle, 
-  Clock, 
-  Users, 
-  Wrench,
-  Calendar,
-  Settings
+  Wrench
 } from "lucide-react";
-import { dashboardService, DashboardMetrics } from "@/services/api";
+import { dashboardService } from "@/services/api";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
@@ -22,20 +17,6 @@ const Dashboard = () => {
   const { data: metrics, isLoading: metricsLoading, error: metricsError } = useQuery({
     queryKey: ['dashboard-metrics'],
     queryFn: dashboardService.getMetrics,
-    refetchInterval: 30000, // Atualizar a cada 30 segundos
-  });
-
-  // Buscar próximas atividades
-  const { data: activities, isLoading: activitiesLoading } = useQuery({
-    queryKey: ['upcoming-activities'],
-    queryFn: dashboardService.getUpcomingActivities,
-    refetchInterval: 60000, // Atualizar a cada 1 minuto
-  });
-
-  // Buscar status do sistema
-  const { data: systemStatus, isLoading: statusLoading } = useQuery({
-    queryKey: ['system-status'],
-    queryFn: dashboardService.getSystemStatus,
     refetchInterval: 30000, // Atualizar a cada 30 segundos
   });
 
@@ -94,15 +75,7 @@ const Dashboard = () => {
     return Math.round((current / total) * 100);
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'critical': return 'bg-destructive text-destructive-foreground';
-      case 'high': return 'bg-orange-500 text-white';
-      case 'medium': return 'bg-yellow-500 text-white';
-      case 'low': return 'bg-green-500 text-white';
-      default: return 'bg-muted text-muted-foreground';
-    }
-  };
+
 
   return (
     <MainLayout>
@@ -140,14 +113,26 @@ const Dashboard = () => {
           />
           
           <MetricCard
-            title="Equipamentos"
+            title="Equipamentos Pai"
             value={metrics?.equipmentCount || 0}
-            subtitle={`${metrics?.activeEquipment || 0} ativos`}
+            subtitle="equipamentos principais"
             icon={Wrench}
             trend={{ 
-              value: metrics?.maintenanceEquipment || 0, 
-              label: "em manutenção", 
-              isPositive: false 
+              value: metrics?.equipmentCount || 0, 
+              label: "total de pais", 
+              isPositive: true 
+            }}
+          />
+          
+          <MetricCard
+            title="Equipamentos Filhos"
+            value={metrics?.childEquipmentCount || 0}
+            subtitle="equipamentos secundários"
+            icon={Wrench}
+            trend={{ 
+              value: metrics?.childEquipmentCount || 0, 
+              label: "total de filhos", 
+              isPositive: true 
             }}
           />
           
@@ -187,17 +172,7 @@ const Dashboard = () => {
             }}
           />
           
-          <MetricCard
-            title="Equipe Ativa"
-            value={metrics?.activeTeam || 0}
-            subtitle={`de ${metrics?.totalUsers || 0} usuários`}
-            icon={Users}
-            trend={{ 
-              value: metrics?.recentUpdates || 0, 
-              label: "atividades recentes", 
-              isPositive: true 
-            }}
-          />
+
         </div>
 
 

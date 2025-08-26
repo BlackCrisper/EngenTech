@@ -94,8 +94,17 @@ export interface DashboardMetrics {
   completedTasks: number;
   activeAreas: number;
   alerts: number;
-  activeTeam: number;
+  childEquipmentCount: number;
   lastUpdated: string;
+  // Propriedades adicionais usadas no dashboard
+  recentUpdates: number;
+  activeEquipment: number;
+  maintenanceEquipment: number;
+  totalTasks: number;
+  totalAreas: number;
+  completedAreas: number;
+  overdueTasks: number;
+  lowProgressTasks: number;
 }
 
 export interface ProgressUpdate {
@@ -187,37 +196,14 @@ export const dashboardService = {
     return response.data;
   },
 
-  getUpcomingActivities: async () => {
-    const response = await api.get('/dashboard/upcoming-activities');
-    return response.data;
-  },
 
-  getSystemStatus: async () => {
-    const response = await api.get('/dashboard/system-status');
-    return response.data;
-  },
 
   getProgressByArea: async () => {
     const response = await api.get('/dashboard/progress-by-area');
     return response.data;
   },
 
-  getProgressByDiscipline: async () => {
-    const response = await api.get('/dashboard/progress-by-discipline');
-    return response.data;
-  },
 
-  // Buscar tendências de progresso
-  getProgressTrends: async () => {
-    const response = await api.get('/dashboard/progress-trends');
-    return response.data;
-  },
-
-  // Buscar equipamentos críticos
-  getCriticalEquipment: async () => {
-    const response = await api.get('/dashboard/critical-equipment');
-    return response.data;
-  },
 };
 
 // Serviços de Áreas

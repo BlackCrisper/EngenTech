@@ -32,7 +32,6 @@ router.get('/metrics', async (req, res) => {
     const equipmentResult = await pool.request()
       .query(`
         SELECT 
-          COUNT(*) as totalEquipment,
           COUNT(CASE WHEN isParent = 1 THEN 1 END) as parentEquipment,
           COUNT(CASE WHEN isParent = 0 OR isParent IS NULL THEN 1 END) as childEquipment
         FROM Equipment
@@ -61,17 +60,7 @@ router.get('/metrics', async (req, res) => {
 
     const areasData = areasResult.recordset[0];
 
-    // 4. Contar usuários ativos
-    const usersResult = await pool.request()
-      .query(`
-        SELECT 
-          COUNT(*) as totalUsers,
-          COUNT(CASE WHEN active = 1 THEN 1 END) as activeUsers,
-          COUNT(CASE WHEN active = 0 THEN 1 END) as inactiveUsers
-        FROM Users
-      `);
 
-    const usersData = usersResult.recordset[0];
 
     // 5. Calcular tarefas vencidas (se houver datas de vencimento)
     const overdueTasksResult = await pool.request()
@@ -168,11 +157,11 @@ router.get('/metrics', async (req, res) => {
     const metrics = {
       // Métricas principais
       progressTotal: Math.round(averageProgress),
-      equipmentCount: equipmentData?.totalEquipment || 0,
+      equipmentCount: equipmentData?.parentEquipment || 0,
       completedTasks: completedTasks,
       activeAreas: areasData?.activeAreas || 0,
       alerts: lowProgressTasks + overdueTasks,
-      activeTeam: usersData?.activeUsers || 0,
+      childEquipmentCount: equipmentData?.childEquipment || 0,
       
       // Métricas detalhadas
       totalTasks: totalTasks,
@@ -191,10 +180,6 @@ router.get('/metrics', async (req, res) => {
       completedAreas: 0, // Não temos essa informação na estrutura atual
       overallAreaProgress: Math.round(areasData?.overallAreaProgress || 0),
       
-      // Status de usuários
-      totalUsers: usersData?.totalUsers || 0,
-      inactiveUsers: usersData?.inactiveUsers || 0,
-      
       // Dados para gráficos
       disciplineProgress: disciplineProgress,
       topEquipment: topEquipment,
@@ -211,103 +196,7 @@ router.get('/metrics', async (req, res) => {
   }
 });
 
-// Buscar próximas atividades
-router.get('/upcoming-activities', async (req, res) => {
-  try {
-    const pool = await getConnection();
 
-    const result = await pool.request()
-      .query(`
-        SELECT TOP 10
-          e.tag as equipmentTag,
-          e.type as equipmentName,
-          a.name as areaName,
-          et.discipline,
-          et.currentProgress,
-          et.dueDate,
-          et.updatedAt
-        FROM EquipmentTasks et
-        JOIN Equipment e ON et.equipmentId = e.id
-        JOIN Areas a ON e.areaId = a.id
-        WHERE et.currentProgress < 100
-        ORDER BY 
-          CASE 
-            WHEN et.dueDate IS NOT NULL AND et.dueDate < GETDATE() THEN 1
-            WHEN et.currentProgress < 30 THEN 2
-            ELSE 3
-          END,
-          et.updatedAt DESC
-      `);
-
-    const activities = result.recordset.map(item => ({
-      equipmentTag: item.equipmentTag,
-      equipmentName: item.equipmentName,
-      area: item.areaName,
-      discipline: item.discipline,
-      progress: item.currentProgress,
-      dueDate: item.dueDate,
-      lastUpdated: item.updatedAt,
-      priority: item.dueDate && item.dueDate < new Date() ? 'high' : 
-                item.currentProgress < 30 ? 'medium' : 'low'
-    }));
-
-    res.json(activities);
-
-  } catch (error) {
-    console.error('Erro ao buscar atividades:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
-  }
-});
-
-// Buscar status do sistema
-router.get('/system-status', async (req, res) => {
-  try {
-    const pool = await getConnection();
-
-    // Testar conexão com banco
-    await pool.request().query('SELECT 1');
-
-    // Contar usuários ativos nas últimas 24 horas
-    const activeUsersResult = await pool.request()
-      .query(`
-        SELECT COUNT(DISTINCT userId) as activeUsers
-        FROM TaskHistory
-        WHERE createdAt >= DATEADD(hour, -24, GETDATE())
-      `);
-
-    const activeUsers = activeUsersResult.recordset[0]?.activeUsers || 0;
-
-    // Contar atualizações recentes
-    const recentUpdatesResult = await pool.request()
-      .query(`
-        SELECT COUNT(*) as recentUpdates
-        FROM TaskHistory
-        WHERE createdAt >= DATEADD(hour, -1, GETDATE())
-      `);
-
-    const recentUpdates = recentUpdatesResult.recordset[0]?.recentUpdates || 0;
-
-    const status = {
-      database: 'Online',
-      lastUpdate: new Date().toISOString(),
-      system: 'Online',
-      activeUsers: activeUsers,
-      recentUpdates: recentUpdates,
-      uptime: process.uptime(),
-      serverTime: new Date().toISOString()
-    };
-
-    res.json(status);
-
-  } catch (error) {
-    console.error('Erro ao verificar status:', error);
-    res.status(500).json({ 
-      database: 'Offline',
-      error: 'Erro interno do servidor',
-      lastUpdate: new Date().toISOString()
-    });
-  }
-});
 
 // Buscar gráfico de progresso por área
 router.get('/progress-by-area', async (req, res) => {
@@ -407,115 +296,6 @@ router.get('/progress-by-area', async (req, res) => {
   }
 });
 
-// Buscar progresso por disciplina
-router.get('/progress-by-discipline', async (req, res) => {
-  try {
-    const pool = await getConnection();
 
-    const result = await pool.request()
-      .query(`
-        SELECT 
-          discipline,
-          AVG(currentProgress) as averageProgress,
-          COUNT(*) as taskCount,
-          COUNT(CASE WHEN currentProgress = 100 THEN 1 END) as completedCount,
-          COUNT(CASE WHEN currentProgress < 50 THEN 1 END) as lowProgressCount,
-          COUNT(CASE WHEN dueDate IS NOT NULL AND dueDate < GETDATE() AND currentProgress < 100 THEN 1 END) as overdueCount
-        FROM EquipmentTasks
-        GROUP BY discipline
-        ORDER BY averageProgress DESC
-      `);
-
-    const progressByDiscipline = result.recordset.map(item => ({
-      discipline: item.discipline,
-      progress: Math.round(item.averageProgress || 0),
-      taskCount: item.taskCount,
-      completedCount: item.completedCount,
-      lowProgressCount: item.lowProgressCount,
-      overdueCount: item.overdueCount
-    }));
-
-    res.json(progressByDiscipline);
-
-  } catch (error) {
-    console.error('Erro ao buscar progresso por disciplina:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
-  }
-});
-
-// Nova rota: Buscar tendências de progresso (últimos 30 dias)
-router.get('/progress-trends', async (req, res) => {
-  try {
-    const pool = await getConnection();
-
-    const result = await pool.request()
-      .query(`
-        SELECT 
-          CAST(createdAt AS DATE) as date,
-          COUNT(*) as updates,
-          AVG(newProgress) as averageProgress
-        FROM TaskHistory
-        WHERE createdAt >= DATEADD(day, -30, GETDATE())
-        GROUP BY CAST(createdAt AS DATE)
-        ORDER BY date
-      `);
-
-    const trends = result.recordset.map(item => ({
-      date: item.date,
-      updates: item.updates,
-      averageProgress: Math.round(item.averageProgress || 0)
-    }));
-
-    res.json(trends);
-
-  } catch (error) {
-    console.error('Erro ao buscar tendências:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
-  }
-});
-
-// Nova rota: Buscar equipamentos críticos (baixo progresso ou vencidos)
-router.get('/critical-equipment', async (req, res) => {
-  try {
-    const pool = await getConnection();
-
-    const result = await pool.request()
-      .query(`
-        SELECT 
-          e.tag as equipmentTag,
-          e.type as equipmentName,
-          a.name as areaName,
-          AVG(et.currentProgress) as averageProgress,
-          COUNT(et.id) as taskCount,
-          COUNT(CASE WHEN et.dueDate IS NOT NULL AND et.dueDate < GETDATE() AND et.currentProgress < 100 THEN 1 END) as overdueTasks,
-          MAX(et.updatedAt) as lastUpdate
-        FROM Equipment e
-        JOIN Areas a ON e.areaId = a.id
-        LEFT JOIN EquipmentTasks et ON e.id = et.equipmentId
-        WHERE et.currentProgress IS NOT NULL
-        GROUP BY e.id, e.tag, e.type, a.name
-        HAVING AVG(et.currentProgress) < 50 OR 
-               COUNT(CASE WHEN et.dueDate IS NOT NULL AND et.dueDate < GETDATE() AND et.currentProgress < 100 THEN 1 END) > 0
-        ORDER BY averageProgress ASC
-      `);
-
-    const criticalEquipment = result.recordset.map(item => ({
-      equipmentTag: item.equipmentTag,
-      equipmentName: item.equipmentName,
-      areaName: item.areaName,
-      progress: Math.round(item.averageProgress || 0),
-      taskCount: item.taskCount,
-      overdueTasks: item.overdueTasks,
-      lastUpdate: item.lastUpdate,
-      priority: item.overdueTasks > 0 ? 'critical' : 'high'
-    }));
-
-    res.json(criticalEquipment);
-
-  } catch (error) {
-    console.error('Erro ao buscar equipamentos críticos:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
-  }
-});
 
 export default router;
