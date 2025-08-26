@@ -52,15 +52,8 @@ const SECTORS = [
   { value: 'civil', label: 'Civil' },
   { value: 'automation', label: 'Automação' },
   { value: 'maintenance', label: 'Manutenção' },
-  { value: 'production', label: 'Produção' },
-  { value: 'quality', label: 'Qualidade' },
   { value: 'safety', label: 'Segurança' },
-  { value: 'environmental', label: 'Meio Ambiente' },
-  { value: 'logistics', label: 'Logística' },
   { value: 'it', label: 'TI' },
-  { value: 'hr', label: 'RH' },
-  { value: 'finance', label: 'Financeiro' },
-  { value: 'commercial', label: 'Comercial' },
   { value: 'other', label: 'Outros' }
 ];
 

@@ -133,7 +133,7 @@ router.post('/register', async (req, res) => {
     const pool = await getConnection();
     const result = await pool.request()
       .input('userId', sql.Int, decoded.userId)
-      .query('SELECT id, username, email, fullName, role FROM Users WHERE id = @userId AND isActive = 1');
+      .query('SELECT id, name as username, email, name as fullName, role, sector FROM Users WHERE id = @userId AND active = 1');
 
     const user = result.recordset[0];
 
@@ -148,7 +148,8 @@ router.post('/register', async (req, res) => {
         username: user.username,
         email: user.email,
         fullName: user.fullName,
-        role: user.role
+        role: user.role,
+        sector: user.sector
       }
     });
 
