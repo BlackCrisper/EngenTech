@@ -41,7 +41,7 @@ export interface User {
   username: string;
   email: string;
   fullName: string;
-  role: 'admin' | 'supervisor' | 'engineer' | 'operator' | 'viewer';
+  role: 'admin' | 'supervisor' | 'engineer' | 'operator' | 'viewer' | 'sesmt';
   sector: string;
   isActive: boolean;
   createdAt: string;
@@ -649,6 +649,170 @@ export const systemService = {
 export const healthService = {
   check: async () => {
     const response = await api.get('/health');
+    return response.data;
+  },
+};
+
+// =====================================================
+// INTERFACES PARA SESMT
+// =====================================================
+
+export interface SESMTOccurrenceType {
+  id: number;
+  name: string;
+  description: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface SESMTOccurrence {
+  id: number;
+  areaId: number;
+  occurrenceTypeId: number;
+  title: string;
+  description: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  status: 'open' | 'investigating' | 'resolved' | 'closed';
+  reportedBy: number;
+  involvedPersons: string;
+  dateTimeOccurrence: string;
+  dateTimeReport: string;
+  location: string;
+  weatherConditions: string;
+  equipmentInvolved: string;
+  immediateActions: string;
+  recommendations: string;
+  photos: string[];
+  documents: string[];
+  isConfidential: boolean;
+  createdAt: string;
+  updatedAt: string;
+  areaName: string;
+  occurrenceTypeName: string;
+  typeSeverity: string;
+  reporterName: string;
+}
+
+export interface SESMTOccurrenceComment {
+  id: number;
+  occurrenceId: number;
+  userId: number;
+  comment: string;
+  photos: string[];
+  documents: string[];
+  isInternal: boolean;
+  createdAt: string;
+  userName: string;
+}
+
+export interface SESMTOccurrenceHistory {
+  id: number;
+  occurrenceId: number;
+  userId: number;
+  action: string;
+  previousStatus?: string;
+  newStatus?: string;
+  previousSeverity?: string;
+  newSeverity?: string;
+  comments: string;
+  photos: string[];
+  documents: string[];
+  createdAt: string;
+  userName: string;
+}
+
+export interface SESMTStats {
+  statusStats: Array<{ status: string; count: number }>;
+  severityStats: Array<{ severity: string; count: number }>;
+  typeStats: Array<{ typeName: string; count: number }>;
+  areaStats: Array<{ areaName: string; count: number }>;
+  recentStats: {
+    total: number;
+    critical: number;
+    accidents_incidents: number;
+  };
+}
+
+// =====================================================
+// SERVIÇOS SESMT
+// =====================================================
+
+export const sesmtService = {
+  // Buscar tipos de ocorrências
+  getOccurrenceTypes: async (): Promise<SESMTOccurrenceType[]> => {
+    const response = await api.get('/sesmt/occurrence-types');
+    return response.data;
+  },
+
+  // Buscar ocorrências
+  getOccurrences: async (params?: {
+    area?: string;
+    status?: string;
+    severity?: string;
+    type?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<SESMTOccurrence[]> => {
+    const queryParams = new URLSearchParams();
+    if (params?.area && params.area !== 'all') queryParams.append('area', params.area);
+    if (params?.status && params.status !== 'all') queryParams.append('status', params.status);
+    if (params?.severity && params.severity !== 'all') queryParams.append('severity', params.severity);
+    if (params?.type && params.type !== 'all') queryParams.append('type', params.type);
+    if (params?.startDate) queryParams.append('startDate', params.startDate);
+    if (params?.endDate) queryParams.append('endDate', params.endDate);
+    
+    const response = await api.get(`/sesmt/occurrences?${queryParams.toString()}`);
+    return response.data;
+  },
+
+  // Buscar ocorrência específica
+  getOccurrence: async (id: number): Promise<SESMTOccurrence> => {
+    const response = await api.get(`/sesmt/occurrences/${id}`);
+    return response.data;
+  },
+
+  // Criar ocorrência
+  createOccurrence: async (data: FormData): Promise<{ message: string; occurrence: any }> => {
+    const response = await api.post('/sesmt/occurrences', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  // Atualizar ocorrência
+  updateOccurrence: async (id: number, data: Partial<SESMTOccurrence>): Promise<{ message: string }> => {
+    const response = await api.put(`/sesmt/occurrences/${id}`, data);
+    return response.data;
+  },
+
+  // Buscar comentários de uma ocorrência
+  getOccurrenceComments: async (id: number): Promise<SESMTOccurrenceComment[]> => {
+    const response = await api.get(`/sesmt/occurrences/${id}/comments`);
+    return response.data;
+  },
+
+  // Adicionar comentário
+  addComment: async (id: number, data: FormData): Promise<{ message: string; comment: any }> => {
+    const response = await api.post(`/sesmt/occurrences/${id}/comments`, data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  // Buscar histórico de uma ocorrência
+  getOccurrenceHistory: async (id: number): Promise<SESMTOccurrenceHistory[]> => {
+    const response = await api.get(`/sesmt/occurrences/${id}/history`);
+    return response.data;
+  },
+
+  // Buscar estatísticas SESMT
+  getStats: async (): Promise<SESMTStats> => {
+    const response = await api.get('/sesmt/stats');
     return response.data;
   },
 };

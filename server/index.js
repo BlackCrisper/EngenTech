@@ -34,6 +34,7 @@ import usersRoutes from './routes/users.js';
 import tasksRoutes from './routes/tasks.js';
 import reportsRoutes from './routes/reports.js';
 import systemRoutes from './routes/system.js';
+import sesmtRoutes from './routes/sesmt.js';
 
 // Rotas da API
 app.use('/api/auth', authRoutes);
@@ -45,6 +46,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/system', systemRoutes);
+app.use('/api/sesmt', sesmtRoutes);
 
 // Rota de health check
 app.get('/api/health', (req, res) => {

@@ -1,8 +1,12 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import { getConnection, sql } from '../config/database.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
+
+// Aplicar autenticação em todas as rotas
+router.use(authenticateToken);
 
 // Buscar todos os usuários
 router.get('/', async (req, res) => {

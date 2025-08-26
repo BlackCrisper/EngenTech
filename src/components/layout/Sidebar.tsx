@@ -9,13 +9,13 @@ import {
   Wrench,
   X,
   FileText,
-  PieChart
+  PieChart,
+  Shield
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useLocation, Link } from "react-router-dom";
-import { usePermissions } from "@/hooks/usePermissions";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface SidebarProps {
@@ -27,6 +27,7 @@ const navigationItems = [
   { icon: Home, label: "Dashboard", href: "/", resource: "dashboard" },
   { icon: MapPin, label: "Áreas", href: "/areas", resource: "areas" },
   { icon: Wrench, label: "Equipamentos", href: "/equipment", resource: "equipment" },
+  { icon: Shield, label: "SESMT", href: "/sesmt", resource: "sesmt" },
   { icon: FileText, label: "Relatórios", href: "/reports", resource: "reports" },
   { icon: PieChart, label: "Relatórios Avançados", href: "/advanced-reports", resource: "reports" },
   { icon: Users, label: "Usuários", href: "/users", resource: "users" },
@@ -35,7 +36,6 @@ const navigationItems = [
 
 export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const location = useLocation();
-  const { canRead, permissions, isLoading } = usePermissions();
   const { user } = useAuth();
 
   return (
@@ -102,9 +102,40 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 }
               }
               
-              // Verificar se o usuário tem permissão para acessar este recurso
-              const hasPermission = item.resource ? canRead(item.resource) : true;
-              if (item.resource && !hasPermission) {
+              // Verificação específica para SESMT (apenas segurança+)
+              if (item.label === "SESMT") {
+                const isSecurityOrAbove = ['sesmt', 'supervisor', 'admin'].includes(user?.role || '');
+                if (!isSecurityOrAbove) {
+                  return null; // Ocultar o item
+                }
+              }
+              
+              // Verificação baseada apenas na role do usuário
+              const userRole = user?.role || '';
+              
+              // Verificar se o usuário tem acesso baseado na role
+              const hasAccess = () => {
+                switch (item.resource) {
+                  case 'dashboard':
+                    return true; // Todos podem acessar dashboard
+                  case 'areas':
+                    return true; // Todos podem visualizar áreas
+                  case 'equipment':
+                    return ['engineer', 'supervisor', 'admin'].includes(userRole);
+                  case 'sesmt':
+                    return ['sesmt', 'supervisor', 'admin'].includes(userRole);
+                  case 'reports':
+                    return true; // Todos podem acessar relatórios
+                  case 'users':
+                    return ['supervisor', 'admin'].includes(userRole);
+                  case 'settings':
+                    return userRole === 'admin';
+                  default:
+                    return true;
+                }
+              };
+              
+              if (!hasAccess()) {
                 return null;
               }
               

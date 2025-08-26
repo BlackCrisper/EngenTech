@@ -14,6 +14,7 @@ import AdvancedReports from "./pages/AdvancedReports";
 import Reports from "./pages/Reports";
 import Users from "./pages/Users";
 import Settings from "./pages/Settings";
+import SESMT from "./pages/SESMT";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -121,6 +122,33 @@ const EngineerRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// Componente para rotas de segurança (SESMT)
+const SecurityRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, isLoading, user } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Verificar se o usuário é de segurança, supervisor ou admin
+  if (!['sesmt', 'supervisor', 'admin'].includes(user?.role || '')) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+};
+
 // Componente para rotas públicas (login)
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -194,6 +222,11 @@ const AppRoutes = () => (
       <AdminOnlyRoute>
         <Settings />
       </AdminOnlyRoute>
+    } />
+    <Route path="/sesmt" element={
+      <SecurityRoute>
+        <SESMT />
+      </SecurityRoute>
     } />
     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
     <Route path="*" element={<NotFound />} />

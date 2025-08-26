@@ -5,14 +5,19 @@ import { config } from '../config/env.js';
 // Middleware para verificar se o usuário está autenticado
 export const authenticateToken = async (req, res, next) => {
   try {
+    console.log('🔐 Autenticando rota:', req.method, req.path);
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
+      console.log('❌ Token não fornecido');
       return res.status(401).json({ error: 'Token de acesso necessário' });
     }
 
+    console.log('✅ Token fornecido, verificando...');
     const decoded = jwt.verify(token, config.JWT_SECRET);
+    console.log('✅ Token válido, userId:', decoded.userId);
+    
     const pool = await getConnection();
     
     const result = await pool.request()
@@ -20,13 +25,15 @@ export const authenticateToken = async (req, res, next) => {
       .query('SELECT id, name, email, role, active FROM Users WHERE id = @userId AND active = 1');
 
     if (result.recordset.length === 0) {
+      console.log('❌ Usuário não encontrado ou inativo');
       return res.status(401).json({ error: 'Usuário não encontrado ou inativo' });
     }
 
     req.user = result.recordset[0];
+    console.log('✅ Usuário autenticado:', req.user.name, 'Role:', req.user.role);
     next();
   } catch (error) {
-    console.error('Erro na autenticação:', error);
+    console.error('❌ Erro na autenticação:', error);
     return res.status(403).json({ error: 'Token inválido' });
   }
 };

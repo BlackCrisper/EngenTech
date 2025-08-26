@@ -1,7 +1,11 @@
 import express from 'express';
 import { getConnection, sql } from '../config/database.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
+
+// Aplicar autenticação em todas as rotas
+router.use(authenticateToken);
 
 // Buscar métricas do dashboard
 router.get('/metrics', async (req, res) => {
@@ -154,13 +158,25 @@ router.get('/metrics', async (req, res) => {
       taskCount: item.taskCount
     }));
 
+    // Buscar estatísticas SESMT (acidentes e incidentes)
+    const sesmtStatsResult = await pool.request()
+      .query(`
+        SELECT 
+          COUNT(CASE WHEN occurrenceTypeId IN (1, 2) THEN 1 END) as accidents_incidents,
+          COUNT(CASE WHEN severity IN ('high', 'critical') THEN 1 END) as critical_occurrences
+        FROM SESMTOccurrences
+        WHERE dateTimeOccurrence >= DATEADD(day, -30, GETDATE())
+      `);
+
+    const sesmtStats = sesmtStatsResult.recordset[0] || { accidents_incidents: 0, critical_occurrences: 0 };
+
     const metrics = {
       // Métricas principais
       progressTotal: Math.round(averageProgress),
       equipmentCount: equipmentData?.parentEquipment || 0,
       completedTasks: completedTasks,
       activeAreas: areasData?.activeAreas || 0,
-      alerts: lowProgressTasks + overdueTasks,
+      alerts: lowProgressTasks + overdueTasks + sesmtStats.accidents_incidents,
       childEquipmentCount: equipmentData?.childEquipment || 0,
       
       // Métricas detalhadas
@@ -184,6 +200,9 @@ router.get('/metrics', async (req, res) => {
       disciplineProgress: disciplineProgress,
       topEquipment: topEquipment,
       lowProgressEquipment: lowProgressEquipment,
+      
+      // Dados SESMT
+      sesmtStats: sesmtStats,
       
       lastUpdated: new Date().toISOString()
     };

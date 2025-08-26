@@ -2,8 +2,12 @@ import express from 'express';
 import { getConnection, sql } from '../config/database.js';
 import { config } from '../config/env.js';
 import jwt from 'jsonwebtoken';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
+
+// Aplicar autenticação em todas as rotas
+router.use(authenticateToken);
 
 // Buscar progresso de todos os equipamentos
 router.get('/', async (req, res) => {
