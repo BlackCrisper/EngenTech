@@ -179,6 +179,12 @@ export const usePermissions = () => {
     return false;
   };
 
+  // Verificar se o usuário pode atualizar progresso de tarefas
+  const canUpdateTaskProgress = (): boolean => {
+    // Operadores, engenheiros, supervisores e admins podem atualizar progresso
+    return ['operator', 'engineer', 'supervisor', 'admin'].includes(user?.role || '');
+  };
+
   // Verificar se o usuário pode visualizar equipamentos baseado no setor
   const canViewEquipment = (equipmentSector?: string): boolean => {
     // Admin e supervisor podem visualizar todos os equipamentos
@@ -268,6 +274,7 @@ export const usePermissions = () => {
     canDeleteUser,
     canManageTasks,
     canViewTasks,
+    canUpdateTaskProgress,
     canManageEquipment,
     canViewEquipment,
     canManageAreas,

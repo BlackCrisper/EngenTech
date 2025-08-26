@@ -46,7 +46,7 @@ export default function EquipmentTasks() {
   const { equipmentId } = useParams<{ equipmentId: string }>();
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
-  const { canViewTasks, canManageTasks, getUserSector } = usePermissions();
+  const { canViewTasks, canManageTasks, canUpdateTaskProgress, getUserSector } = usePermissions();
   
   const [selectedTask, setSelectedTask] = useState<EquipmentTask | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -546,40 +546,44 @@ export default function EquipmentTasks() {
                   </div>
 
                   <div className="flex justify-end space-x-2">
-                                             <UpdateGuard resource="tasks">
-                           <Button
-                             variant="outline"
-                             size="sm"
-                             onClick={() => {
-                               setSelectedTask(task);
-                               setProgressData({
-                                 currentProgress: task.currentProgress,
-                                 observations: '',
-                                 actualHours: task.actualHours
-                               });
-                               setIsProgressDialogOpen(true);
-                             }}
-                           >
-                             <Edit className="w-4 h-4 mr-1" />
-                             Atualizar
-                           </Button>
-                           <Button
-                             variant="outline"
-                             size="sm"
-                             onClick={() => {
-                               setSelectedTask(task);
-                               setProgressData({
-                                 currentProgress: task.currentProgress,
-                                 observations: '',
-                                 actualHours: task.actualHours
-                               });
-                               setSelectedFiles([]);
-                               setIsProgressWithPhotosDialogOpen(true);
-                             }}
-                           >
-                             <Camera className="w-4 h-4 mr-1" />
-                             Com Fotos
-                           </Button>
+                         <UpdateGuard resource="tasks">
+                           {canUpdateTaskProgress() && (
+                             <>
+                               <Button
+                                 variant="outline"
+                                 size="sm"
+                                 onClick={() => {
+                                   setSelectedTask(task);
+                                   setProgressData({
+                                     currentProgress: task.currentProgress,
+                                     observations: '',
+                                     actualHours: task.actualHours
+                                   });
+                                   setIsProgressDialogOpen(true);
+                                 }}
+                               >
+                                 <Edit className="w-4 h-4 mr-1" />
+                                 Atualizar
+                               </Button>
+                               <Button
+                                 variant="outline"
+                                 size="sm"
+                                 onClick={() => {
+                                   setSelectedTask(task);
+                                   setProgressData({
+                                     currentProgress: task.currentProgress,
+                                     observations: '',
+                                     actualHours: task.actualHours
+                                   });
+                                   setSelectedFiles([]);
+                                   setIsProgressWithPhotosDialogOpen(true);
+                                 }}
+                               >
+                                 <Camera className="w-4 h-4 mr-1" />
+                                 Com Fotos
+                               </Button>
+                             </>
+                           )}
                          </UpdateGuard>
                     
                     <Button

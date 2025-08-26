@@ -10,7 +10,6 @@ import Areas from "./pages/Areas";
 import AreaDetails from "./pages/AreaDetails";
 import Equipment from "./pages/Equipment";
 import EquipmentTasks from "./pages/EquipmentTasks";
-import Progress from "./pages/Progress";
 import AdvancedReports from "./pages/AdvancedReports";
 import Reports from "./pages/Reports";
 import Users from "./pages/Users";
@@ -68,6 +67,33 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// Componente para rotas de engenheiro ou superior
+const EngineerRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, isLoading, user } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Verificar se o usuário é engenheiro, supervisor ou admin
+  if (!['engineer', 'supervisor', 'admin'].includes(user?.role || '')) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+};
+
 // Componente para rotas públicas (login)
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -113,19 +139,14 @@ const AppRoutes = () => (
       </ProtectedRoute>
     } />
     <Route path="/equipment" element={
-      <ProtectedRoute>
+      <EngineerRoute>
         <Equipment />
-      </ProtectedRoute>
+      </EngineerRoute>
     } />
     <Route path="/equipment/:equipmentId/tasks" element={
-      <ProtectedRoute>
+      <EngineerRoute>
         <EquipmentTasks />
-      </ProtectedRoute>
-    } />
-    <Route path="/progress" element={
-      <ProtectedRoute>
-        <Progress />
-      </ProtectedRoute>
+      </EngineerRoute>
     } />
             <Route path="/reports" element={
           <ProtectedRoute>

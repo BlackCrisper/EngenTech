@@ -51,7 +51,7 @@ export default function AreaDetails() {
   const { areaId } = useParams<{ areaId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { getUserSector } = usePermissions();
+  const { getUserSector, canUpdateTaskProgress } = usePermissions();
   const queryClient = useQueryClient();
 
   // Mapeamento de setores para disciplinas de equipamentos
@@ -485,13 +485,15 @@ export default function AreaDetails() {
                                   '--progress-background': getProgressBarColor(child.averageProgress)
                                 } as React.CSSProperties}
                               />
-                              <Button
-                                size="sm"
-                                onClick={() => handleUpdateTask(child)}
-                              >
-                                <Edit className="w-4 h-4 mr-1" />
-                                Atualizar
-                              </Button>
+                              {canUpdateTaskProgress() && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleUpdateTask(child)}
+                                >
+                                  <Edit className="w-4 h-4 mr-1" />
+                                  Atualizar
+                                </Button>
+                              )}
                             </div>
                           </div>
                         ))}

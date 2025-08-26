@@ -9,7 +9,6 @@ import {
   Wrench,
   X,
   FileText,
-  Activity,
   PieChart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,7 +27,6 @@ const navigationItems = [
   { icon: Home, label: "Dashboard", href: "/", resource: "dashboard" },
   { icon: MapPin, label: "Áreas", href: "/areas", resource: "areas" },
   { icon: Wrench, label: "Equipamentos", href: "/equipment", resource: "equipment" },
-  { icon: Activity, label: "Progresso", href: "/progress", resource: "progress" },
   { icon: FileText, label: "Relatórios", href: "/reports", resource: "reports" },
   { icon: PieChart, label: "Relatórios Avançados", href: "/advanced-reports", resource: "reports" },
   { icon: Users, label: "Usuários", href: "/users", resource: "users" },
@@ -88,10 +86,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           {/* Navigation */}
           <nav className="flex-1 space-y-1 p-4">
             {navigationItems.map((item) => {
-              // Verificar se o usuário tem permissão para acessar este recurso
-              const hasPermission = item.resource ? canRead(item.resource) : true;
-              
-              // Verificação específica para Usuários e Configurações
+              // Verificação específica para Usuários e Configurações (apenas admin/supervisor)
               if (item.label === "Usuários" || item.label === "Configurações") {
                 const isAdminOrSupervisor = user?.role === 'admin' || user?.role === 'supervisor';
                 if (!isAdminOrSupervisor) {
@@ -99,7 +94,16 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 }
               }
               
+              // Verificação específica para Equipamentos (apenas engenheiro+)
+              if (item.label === "Equipamentos") {
+                const isEngineerOrAbove = ['engineer', 'supervisor', 'admin'].includes(user?.role || '');
+                if (!isEngineerOrAbove) {
+                  return null; // Ocultar o item
+                }
+              }
+              
               // Verificar se o usuário tem permissão para acessar este recurso
+              const hasPermission = item.resource ? canRead(item.resource) : true;
               if (item.resource && !hasPermission) {
                 return null;
               }
