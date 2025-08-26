@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2, Search, Filter, Building2, TrendingUp, AlertTriangle, CheckCircle, Clock, Users, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { CapslockInput } from '@/components/ui/capslock-input';
+import { CapslockTextarea } from '@/components/ui/capslock-textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
@@ -237,20 +239,20 @@ export default function Areas() {
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="name">Nome da Área</Label>
-                    <Input
+                    <CapslockInput
                       id="name"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="Digite o nome da área"
+                      placeholder="DIGITE O NOME DA ÁREA"
                     />
                   </div>
                   <div>
                     <Label htmlFor="description">Descrição</Label>
-                    <Textarea
+                    <CapslockTextarea
                       id="description"
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      placeholder="Digite a descrição da área"
+                      placeholder="DIGITE A DESCRIÇÃO DA ÁREA"
                     />
                   </div>
                   <div>
@@ -513,20 +515,20 @@ export default function Areas() {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="edit-name">Nome da Área</Label>
-                <Input
+                <CapslockInput
                   id="edit-name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Digite o nome da área"
+                  placeholder="DIGITE O NOME DA ÁREA"
                 />
               </div>
               <div>
                 <Label htmlFor="edit-description">Descrição</Label>
-                <Textarea
+                <CapslockTextarea
                   id="edit-description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Digite a descrição da área"
+                  placeholder="DIGITE A DESCRIÇÃO DA ÁREA"
                 />
               </div>
               <div>

@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Edit, Trash2, Search, Filter, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { CapslockInput } from '@/components/ui/capslock-input';
+import { CapslockTextarea } from '@/components/ui/capslock-textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
@@ -438,20 +440,20 @@ export default function Equipment() {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="tag">Tag do Equipamento *</Label>
-                <Input
+                <CapslockInput
                   id="tag"
                   value={formData.equipmentTag}
                   onChange={(e) => setFormData({ ...formData, equipmentTag: e.target.value })}
-                  placeholder="Ex: EQ-001"
+                  placeholder="EX: COMP-001"
                 />
               </div>
               <div>
                 <Label htmlFor="name">Nome/Tipo *</Label>
-                <Input
+                <CapslockInput
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Ex: Moinho de Cru"
+                  placeholder="EX: MOINHO DE CRU"
                 />
               </div>
               <div>
@@ -471,11 +473,11 @@ export default function Equipment() {
               </div>
               <div>
                 <Label htmlFor="description">Descrição</Label>
-                <Textarea
+                <CapslockTextarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Descrição do equipamento"
+                  placeholder="DESCRIÇÃO DO EQUIPAMENTO"
                 />
               </div>
               
@@ -607,20 +609,20 @@ export default function Equipment() {
           <div className="space-y-4">
             <div>
               <Label htmlFor="edit-tag">Tag do Equipamento *</Label>
-              <Input
+              <CapslockInput
                 id="edit-tag"
                 value={formData.equipmentTag}
                 onChange={(e) => setFormData({ ...formData, equipmentTag: e.target.value })}
-                placeholder="Ex: EQ-001"
+                placeholder="EX: COMP-001"
               />
             </div>
             <div>
               <Label htmlFor="edit-name">Nome/Tipo *</Label>
-              <Input
+              <CapslockInput
                 id="edit-name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ex: Moinho de Cru"
+                placeholder="EX: MOINHO DE CRU"
               />
             </div>
             <div>
@@ -640,11 +642,11 @@ export default function Equipment() {
             </div>
             <div>
               <Label htmlFor="edit-description">Descrição</Label>
-              <Textarea
+              <CapslockTextarea
                 id="edit-description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Descrição do equipamento"
+                placeholder="DESCRIÇÃO DO EQUIPAMENTO"
               />
             </div>
             

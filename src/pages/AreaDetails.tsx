@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { CapslockInput } from '@/components/ui/capslock-input';
+import { CapslockTextarea } from '@/components/ui/capslock-textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -708,11 +710,11 @@ export default function AreaDetails() {
 
                   <div>
                     <Label htmlFor="observations">Observações</Label>
-                    <Textarea
+                    <CapslockTextarea
                       id="observations"
                       value={updateData.observations}
                       onChange={(e) => setUpdateData({ ...updateData, observations: e.target.value })}
-                      placeholder="Descreva as atividades realizadas, observações importantes..."
+                      placeholder="DESCREVA AS ATIVIDADES REALIZADAS, OBSERVAÇÕES IMPORTANTES..."
                       rows={3}
                     />
                   </div>

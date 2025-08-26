@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { CapslockInput } from '@/components/ui/capslock-input';
+import { CapslockTextarea } from '@/components/ui/capslock-textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
@@ -682,9 +684,9 @@ export default function EquipmentTasks() {
                 
                 <div>
                   <Label htmlFor="observations">Observações</Label>
-                  <Textarea
+                  <CapslockTextarea
                     id="observations"
-                    placeholder="Descreva o trabalho realizado..."
+                    placeholder="DESCREVA O TRABALHO REALIZADO..."
                     value={progressData.observations}
                     onChange={(e) => setProgressData({
                       ...progressData,
@@ -783,9 +785,9 @@ export default function EquipmentTasks() {
 
                  <div>
                    <Label htmlFor="observations-photos">Observações</Label>
-                   <Textarea
+                   <CapslockTextarea
                      id="observations-photos"
-                     placeholder="Descreva o trabalho realizado..."
+                     placeholder="DESCREVA O TRABALHO REALIZADO..."
                      value={progressData.observations}
                      onChange={(e) => setProgressData({
                        ...progressData,
