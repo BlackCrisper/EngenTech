@@ -338,6 +338,7 @@ export const progressService = {
     currentProgress: number;
     observations?: string;
     photos?: File[];
+    taskId?: number;
   }) => {
     // Se há fotos, usar FormData, senão usar JSON
     if (data.photos && data.photos.length > 0) {
@@ -347,6 +348,9 @@ export const progressService = {
       formData.append('currentProgress', data.currentProgress.toString());
       if (data.observations) {
         formData.append('observations', data.observations);
+      }
+      if (data.taskId) {
+        formData.append('taskId', data.taskId.toString());
       }
       data.photos.forEach((photo, index) => {
         formData.append(`photos`, photo);
@@ -364,7 +368,8 @@ export const progressService = {
         equipmentId: data.equipmentId,
         discipline: data.discipline,
         currentProgress: data.currentProgress,
-        observations: data.observations || ''
+        observations: data.observations || '',
+        taskId: data.taskId
       };
 
       const response = await api.post('/progress/update', jsonData, {

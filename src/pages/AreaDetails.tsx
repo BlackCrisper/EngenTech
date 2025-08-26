@@ -211,7 +211,7 @@ export default function AreaDetails() {
   };
 
   const handleSaveUpdate = () => {
-    if (!selectedEquipment) return;
+    if (!selectedEquipment || !selectedTask) return;
 
     // Validar se o progresso é um número válido entre 0 e 100
     const progress = Number(updateData.currentProgress);
@@ -226,7 +226,8 @@ export default function AreaDetails() {
       discipline: updateData.discipline,
       currentProgress: progress,
       observations: updateData.observations || '',
-      photos: updateData.photos || []
+      photos: updateData.photos || [],
+      taskId: selectedTask.id // Incluir o ID da tarefa específica
     };
 
     updateProgressMutation.mutate(mutationData);

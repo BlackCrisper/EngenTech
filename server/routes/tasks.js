@@ -387,26 +387,113 @@ router.delete('/:taskId', checkPermission('tasks', 'delete'), auditLog('delete',
     const { taskId } = req.params;
     const pool = await getConnection();
     
-    // Verificar se a tarefa existe
+    // Verificar se a tarefa existe e obter informações completas
     const taskCheck = await pool.request()
       .input('taskId', sql.Int, taskId)
-      .query('SELECT id FROM EquipmentTasks WHERE id = @taskId');
+      .query(`
+        SELECT 
+          et.id,
+          et.name,
+          et.discipline,
+          et.currentProgress,
+          et.status,
+          et.isCustom,
+          e.tag as equipmentTag,
+          e.isParent as equipmentIsParent,
+          a.name as areaName
+        FROM EquipmentTasks et
+        JOIN Equipment e ON et.equipmentId = e.id
+        JOIN Areas a ON e.areaId = a.id
+        WHERE et.id = @taskId
+      `);
     
     if (taskCheck.recordset.length === 0) {
       return res.status(404).json({ error: 'Tarefa não encontrada' });
     }
     
-    // Deletar histórico primeiro
-    await pool.request()
+    const task = taskCheck.recordset[0];
+
+    // VALIDAÇÕES DE REGRAS DE NEGÓCIO PARA DELETAR TAREFAS
+
+    // 1. Não permitir deletar tarefas que já foram iniciadas (progresso > 0)
+    if (task.currentProgress > 0) {
+      return res.status(400).json({ 
+        error: 'Não é possível deletar uma tarefa que já foi iniciada',
+        details: `A tarefa "${task.name}" possui ${task.currentProgress}% de progresso. Tarefas com progresso não podem ser deletadas.`
+      });
+    }
+
+    // 2. Não permitir deletar tarefas que possuem histórico
+    const historyCount = await pool.request()
       .input('taskId', sql.Int, taskId)
-      .query('DELETE FROM TaskHistory WHERE taskId = @taskId');
-    
-    // Deletar tarefa
-    await pool.request()
+      .query('SELECT COUNT(*) as count FROM TaskHistory WHERE taskId = @taskId');
+
+    if (historyCount.recordset[0].count > 0) {
+      return res.status(400).json({ 
+        error: 'Não é possível deletar uma tarefa que possui histórico',
+        details: `A tarefa "${task.name}" possui ${historyCount.recordset[0].count} registro(s) de histórico. O histórico é mantido para auditoria.`
+      });
+    }
+
+    // 3. Não permitir deletar tarefas padrão (não customizadas)
+    if (!task.isCustom) {
+      return res.status(400).json({ 
+        error: 'Não é possível deletar uma tarefa padrão do sistema',
+        details: `A tarefa "${task.name}" é uma tarefa padrão do sistema e não pode ser deletada.`
+      });
+    }
+
+    // 4. Verificar se há fotos/documentos anexados
+    const photosCount = await pool.request()
       .input('taskId', sql.Int, taskId)
-      .query('DELETE FROM EquipmentTasks WHERE id = @taskId');
-    
-    res.json({ message: 'Tarefa deletada com sucesso' });
+      .query(`
+        SELECT COUNT(*) as count 
+        FROM TaskHistory 
+        WHERE taskId = @taskId AND photos IS NOT NULL AND photos != ''
+      `);
+
+    if (photosCount.recordset[0].count > 0) {
+      return res.status(400).json({ 
+        error: 'Não é possível deletar uma tarefa que possui fotos/documentos anexados',
+        details: `A tarefa "${task.name}" possui ${photosCount.recordset[0].count} registro(s) com fotos/documentos. Remova os anexos primeiro.`
+      });
+    }
+
+    // SE PASSAR POR TODAS AS VALIDAÇÕES, PROSSEGUIR COM A DELEÇÃO
+
+    // Iniciar transação para garantir consistência
+    const transaction = new sql.Transaction(pool);
+    await transaction.begin();
+
+    try {
+      // 1. Deletar histórico primeiro (se houver)
+      await transaction.request()
+        .input('taskId', sql.Int, taskId)
+        .query('DELETE FROM TaskHistory WHERE taskId = @taskId');
+      
+      // 2. Deletar tarefa
+      const deleteResult = await transaction.request()
+        .input('taskId', sql.Int, taskId)
+        .query('DELETE FROM EquipmentTasks WHERE id = @taskId');
+
+      if (deleteResult.rowsAffected[0] === 0) {
+        await transaction.rollback();
+        return res.status(404).json({ error: 'Tarefa não encontrada' });
+      }
+
+      // Commit da transação
+      await transaction.commit();
+      
+      res.json({ 
+        message: 'Tarefa deletada com sucesso',
+        details: `Tarefa "${task.name}" (${task.discipline}) do equipamento ${task.equipmentTag} foi removida`
+      });
+      
+    } catch (error) {
+      // Rollback em caso de erro
+      await transaction.rollback();
+      throw error;
+    }
     
   } catch (error) {
     console.error('Erro ao deletar tarefa:', error);

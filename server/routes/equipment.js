@@ -487,10 +487,20 @@ router.delete('/:id', async (req, res) => {
     const { id } = req.params;
     const pool = await getConnection();
 
-    // Verificar se equipamento existe
+    // Verificar se equipamento existe e obter informações completas
     const existingEquipment = await pool.request()
       .input('id', sql.Int, id)
-      .query('SELECT id, tag FROM Equipment WHERE id = @id');
+      .query(`
+        SELECT 
+          e.id, 
+          e.tag, 
+          e.isParent,
+          e.parentTag,
+          a.name as areaName
+        FROM Equipment e
+        JOIN Areas a ON e.areaId = a.id
+        WHERE e.id = @id
+      `);
 
     if (existingEquipment.recordset.length === 0) {
       return res.status(404).json({ error: 'Equipamento não encontrado' });
@@ -498,32 +508,188 @@ router.delete('/:id', async (req, res) => {
 
     const equipment = existingEquipment.recordset[0];
 
+    console.log(`🔍 Iniciando validação para equipamento: ${equipment.tag}`);
+    console.log(`  - ID: ${equipment.id}`);
+    console.log(`  - isParent: ${equipment.isParent}`);
+    console.log(`  - parentTag: ${equipment.parentTag}`);
+
+    // VALIDAÇÕES DE REGRAS DE NEGÓCIO
+
+    // 1. Se é equipamento PAI: verificar se não tem filhos
+    if (equipment.isParent) {
+      console.log(`🔍 Validando equipamento pai: ${equipment.tag}`);
+      
+      // Validação mais robusta - verificar filhos de múltiplas formas
+      const childrenCount1 = await pool.request()
+        .input('parentTag', sql.NVarChar, equipment.tag)
+        .query('SELECT COUNT(*) as count FROM Equipment WHERE parentTag = @parentTag AND isParent = 0');
+
+      const childrenCount2 = await pool.request()
+        .input('parentTag', sql.NVarChar, equipment.tag)
+        .query('SELECT COUNT(*) as count FROM Equipment WHERE parentTag = @parentTag');
+
+      const count1 = childrenCount1.recordset[0].count;
+      const count2 = childrenCount2.recordset[0].count;
+      
+      console.log(`  👶 Encontrados ${count1} equipamento(s) filho(s) (isParent = 0)`);
+      console.log(`  👶 Encontrados ${count2} equipamento(s) com parentTag (todos)`);
+
+      // Usar a validação mais restritiva
+      const finalCount = Math.max(count1, count2);
+      
+      if (finalCount > 0) {
+        console.log(`  ❌ VALIDAÇÃO BLOQUEADA: Equipamento pai ${equipment.tag} tem ${finalCount} filho(s)`);
+        
+        // Buscar detalhes dos filhos para debug
+        const childrenDetails = await pool.request()
+          .input('parentTag', sql.NVarChar, equipment.tag)
+          .query('SELECT id, tag, isParent, parentTag FROM Equipment WHERE parentTag = @parentTag');
+        
+        console.log(`  📋 Detalhes dos filhos:`);
+        for (const child of childrenDetails.recordset) {
+          console.log(`    - ID: ${child.id}, Tag: ${child.tag}, isParent: ${child.isParent}, parentTag: ${child.parentTag}`);
+        }
+        
+        return res.status(400).json({ 
+          error: 'Não é possível deletar um equipamento pai que possui equipamentos filhos',
+          details: `O equipamento ${equipment.tag} possui ${finalCount} equipamento(s) filho(s). Remova todos os filhos primeiro.`
+        });
+      } else {
+        console.log(`  ✅ VALIDAÇÃO APROVADA: Equipamento pai ${equipment.tag} não tem filhos`);
+      }
+    }
+
+    // 2. Se é equipamento FILHO: verificar se não tem tarefas
+    if (!equipment.isParent) {
+      const tasksCount = await pool.request()
+        .input('equipmentId', sql.Int, id)
+        .query('SELECT COUNT(*) as count FROM EquipmentTasks WHERE equipmentId = @equipmentId');
+
+      if (tasksCount.recordset[0].count > 0) {
+        return res.status(400).json({ 
+          error: 'Não é possível deletar um equipamento filho que possui tarefas',
+          details: `O equipamento ${equipment.tag} possui ${tasksCount.recordset[0].count} tarefa(s). Remova todas as tarefas primeiro.`
+        });
+      }
+    }
+
+    // 3. Verificar se há histórico de tarefas (TaskHistory)
+    const historyCount = await pool.request()
+      .input('equipmentId', sql.Int, id)
+      .query(`
+        SELECT COUNT(*) as count 
+        FROM TaskHistory th
+        JOIN EquipmentTasks et ON th.taskId = et.id
+        WHERE et.equipmentId = @equipmentId
+      `);
+
+    if (historyCount.recordset[0].count > 0) {
+      return res.status(400).json({ 
+        error: 'Não é possível deletar um equipamento que possui histórico de tarefas',
+        details: `O equipamento ${equipment.tag} possui ${historyCount.recordset[0].count} registro(s) de histórico. O histórico é mantido para auditoria.`
+      });
+    }
+
+    // 4. Verificar se há fotos/documentos anexados
+    const photosCount = await pool.request()
+      .input('equipmentId', sql.Int, id)
+      .query(`
+        SELECT COUNT(*) as count 
+        FROM TaskHistory th
+        JOIN EquipmentTasks et ON th.taskId = et.id
+        WHERE et.equipmentId = @equipmentId AND th.photos IS NOT NULL AND th.photos != ''
+      `);
+
+    if (photosCount.recordset[0].count > 0) {
+      return res.status(400).json({ 
+        error: 'Não é possível deletar um equipamento que possui fotos/documentos anexados',
+        details: `O equipamento ${equipment.tag} possui ${photosCount.recordset[0].count} registro(s) com fotos/documentos. Remova os anexos primeiro.`
+      });
+    }
+
+    // VALIDAÇÃO FINAL ANTES DE DELETAR
+    console.log(`\n🔍 VALIDAÇÃO FINAL antes de deletar...`);
+    
+    // Verificar novamente se o equipamento ainda é pai e tem filhos (dupla verificação)
+    if (equipment.isParent) {
+      const finalCheck = await pool.request()
+        .input('parentTag', sql.NVarChar, equipment.tag)
+        .query('SELECT COUNT(*) as count FROM Equipment WHERE parentTag = @parentTag');
+      
+      const finalCount = finalCheck.recordset[0].count;
+      console.log(`  🔍 Verificação final: ${finalCount} filho(s) encontrado(s)`);
+      
+      if (finalCount > 0) {
+        console.log(`  ❌ VALIDAÇÃO FINAL FALHOU: Equipamento ainda tem filhos!`);
+        return res.status(400).json({ 
+          error: 'Validação final falhou: equipamento pai ainda possui filhos',
+          details: `O equipamento ${equipment.tag} ainda possui ${finalCount} filho(s). A operação foi cancelada por segurança.`
+        });
+      }
+    }
+    
+    // SE PASSAR POR TODAS AS VALIDAÇÕES, PROSSEGUIR COM A DELEÇÃO
+    console.log(`✅ Todas as validações passaram. Iniciando deleção do equipamento ${equipment.tag}`);
+
     // Iniciar transação para garantir consistência
     const transaction = new sql.Transaction(pool);
     await transaction.begin();
+    console.log(`  🔄 Transação iniciada`);
 
     try {
-      // 1. Deletar tarefas da tabela Tasks
+      // VALIDAÇÃO DENTRO DA TRANSAÇÃO (última verificação)
+      if (equipment.isParent) {
+        console.log(`  🔍 Validação dentro da transação...`);
+        const transactionCheck = await transaction.request()
+          .input('parentTag', sql.NVarChar, equipment.tag)
+          .query('SELECT COUNT(*) as count FROM Equipment WHERE parentTag = @parentTag');
+        
+        const transactionCount = transactionCheck.recordset[0].count;
+        console.log(`  🔍 Verificação na transação: ${transactionCount} filho(s) encontrado(s)`);
+        
+        if (transactionCount > 0) {
+          console.log(`  ❌ VALIDAÇÃO NA TRANSAÇÃO FALHOU: Cancelando operação!`);
+          await transaction.rollback();
+          return res.status(400).json({ 
+            error: 'Validação na transação falhou: equipamento pai ainda possui filhos',
+            details: `O equipamento ${equipment.tag} ainda possui ${transactionCount} filho(s). A operação foi cancelada.`
+          });
+        }
+      }
+
+      // 1. Deletar histórico de tarefas (se houver)
       await transaction.request()
         .input('equipmentId', sql.Int, id)
-        .query('DELETE FROM Tasks WHERE equipmentId = @equipmentId');
+        .query(`
+          DELETE th
+          FROM TaskHistory th
+          JOIN EquipmentTasks et ON th.taskId = et.id
+          WHERE et.equipmentId = @equipmentId
+        `);
 
       // 2. Deletar tarefas da tabela EquipmentTasks
       await transaction.request()
         .input('equipmentId', sql.Int, id)
         .query('DELETE FROM EquipmentTasks WHERE equipmentId = @equipmentId');
 
-      // 3. Deletar progresso
+      // 3. Deletar tarefas da tabela Tasks (se existir)
+      await transaction.request()
+        .input('equipmentId', sql.Int, id)
+        .query('DELETE FROM Tasks WHERE equipmentId = @equipmentId');
+
+      // 4. Deletar progresso (se existir)
       await transaction.request()
         .input('equipmentId', sql.Int, id)
         .query('DELETE FROM Progress WHERE equipmentId = @equipmentId');
 
-      // 4. Atualizar filhos para remover referência ao pai (se for pai)
-      await transaction.request()
-        .input('parentTag', sql.NVarChar, equipment.tag)
-        .query('UPDATE Equipment SET parentTag = NULL WHERE parentTag = @parentTag');
+      // 5. Se for equipamento pai, atualizar filhos para remover referência
+      if (equipment.isParent) {
+        await transaction.request()
+          .input('parentTag', sql.NVarChar, equipment.tag)
+          .query('UPDATE Equipment SET parentTag = NULL WHERE parentTag = @parentTag');
+      }
 
-      // 5. Deletar o equipamento
+      // 6. Deletar o equipamento
       const deleteResult = await transaction.request()
         .input('id', sql.Int, id)
         .query('DELETE FROM Equipment WHERE id = @id');
@@ -536,7 +702,12 @@ router.delete('/:id', async (req, res) => {
       // Commit da transação
       await transaction.commit();
 
-      res.json({ message: 'Equipamento e todas as suas tarefas foram deletados com sucesso' });
+      res.json({ 
+        message: 'Equipamento deletado com sucesso',
+        details: equipment.isParent 
+          ? `Equipamento pai ${equipment.tag} da área ${equipment.areaName} foi removido`
+          : `Equipamento filho ${equipment.tag} da área ${equipment.areaName} foi removido`
+      });
 
     } catch (error) {
       // Rollback em caso de erro

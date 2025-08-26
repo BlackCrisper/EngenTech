@@ -16,7 +16,7 @@ router.get('/', async (req, res) => {
           a.code,
           a.active,
           a.createdAt,
-          COUNT(CASE WHEN e.isParent = 0 THEN e.id END) as equipmentCount,
+          COUNT(DISTINCT CASE WHEN e.isParent = 0 THEN e.id END) as equipmentCount,
           AVG(et.currentProgress) as averageProgress
         FROM Areas a
         LEFT JOIN Equipment e ON a.id = e.areaId AND e.isParent = 0
@@ -55,7 +55,7 @@ router.get('/:id', async (req, res) => {
       .query(`
         SELECT 
           a.*,
-          COUNT(CASE WHEN e.isParent = 0 THEN e.id END) as equipmentCount,
+          COUNT(DISTINCT CASE WHEN e.isParent = 0 THEN e.id END) as equipmentCount,
           AVG(et.currentProgress) as averageProgress
         FROM Areas a
         LEFT JOIN Equipment e ON a.id = e.areaId AND e.isParent = 0
@@ -207,27 +207,130 @@ router.delete('/:id', async (req, res) => {
     const { id } = req.params;
     const pool = await getConnection();
 
-    // Verificar se área tem equipamentos
+    // Verificar se área existe e obter informações
+    const areaInfo = await pool.request()
+      .input('id', sql.Int, id)
+      .query('SELECT id, name, active FROM Areas WHERE id = @id');
+
+    if (areaInfo.recordset.length === 0) {
+      return res.status(404).json({ error: 'Área não encontrada' });
+    }
+
+    const area = areaInfo.recordset[0];
+
+    // VALIDAÇÕES DE REGRAS DE NEGÓCIO PARA DELETAR ÁREAS
+
+    // 1. Verificar se área tem equipamentos
     const equipmentCount = await pool.request()
       .input('id', sql.Int, id)
       .query('SELECT COUNT(*) as count FROM Equipment WHERE areaId = @id');
 
     if (equipmentCount.recordset[0].count > 0) {
       return res.status(400).json({ 
-        error: 'Não é possível deletar uma área que possui equipamentos cadastrados' 
+        error: 'Não é possível deletar uma área que possui equipamentos cadastrados',
+        details: `A área "${area.name}" possui ${equipmentCount.recordset[0].count} equipamento(s). Remova todos os equipamentos primeiro.`
       });
     }
 
-    // Deletar área
-    const result = await pool.request()
+    // 2. Verificar se área tem tarefas (caso existam tarefas órfãs)
+    const tasksCount = await pool.request()
       .input('id', sql.Int, id)
-      .query('DELETE FROM Areas WHERE id = @id');
+      .query(`
+        SELECT COUNT(*) as count 
+        FROM EquipmentTasks et
+        JOIN Equipment e ON et.equipmentId = e.id
+        WHERE e.areaId = @id
+      `);
 
-    if (result.rowsAffected[0] === 0) {
-      return res.status(404).json({ error: 'Área não encontrada' });
+    if (tasksCount.recordset[0].count > 0) {
+      return res.status(400).json({ 
+        error: 'Não é possível deletar uma área que possui tarefas cadastradas',
+        details: `A área "${area.name}" possui ${tasksCount.recordset[0].count} tarefa(s). Remova todas as tarefas primeiro.`
+      });
     }
 
-    res.json({ message: 'Área deletada com sucesso' });
+    // 3. Verificar se área tem histórico de tarefas
+    const historyCount = await pool.request()
+      .input('id', sql.Int, id)
+      .query(`
+        SELECT COUNT(*) as count 
+        FROM TaskHistory th
+        JOIN EquipmentTasks et ON th.taskId = et.id
+        JOIN Equipment e ON et.equipmentId = e.id
+        WHERE e.areaId = @id
+      `);
+
+    if (historyCount.recordset[0].count > 0) {
+      return res.status(400).json({ 
+        error: 'Não é possível deletar uma área que possui histórico de tarefas',
+        details: `A área "${area.name}" possui ${historyCount.recordset[0].count} registro(s) de histórico. O histórico é mantido para auditoria.`
+      });
+    }
+
+    // 4. Verificar se área está ativa (opcional - pode ser uma regra de negócio)
+    if (area.active) {
+      return res.status(400).json({ 
+        error: 'Não é possível deletar uma área ativa',
+        details: `A área "${area.name}" está ativa. Desative a área antes de deletá-la.`
+      });
+    }
+
+    // SE PASSAR POR TODAS AS VALIDAÇÕES, PROSSEGUIR COM A DELEÇÃO
+
+    // Iniciar transação para garantir consistência
+    const transaction = new sql.Transaction(pool);
+    await transaction.begin();
+
+    try {
+      // 1. Deletar histórico de tarefas (se houver)
+      await transaction.request()
+        .input('id', sql.Int, id)
+        .query(`
+          DELETE th
+          FROM TaskHistory th
+          JOIN EquipmentTasks et ON th.taskId = et.id
+          JOIN Equipment e ON et.equipmentId = e.id
+          WHERE e.areaId = @id
+        `);
+
+      // 2. Deletar tarefas (se houver)
+      await transaction.request()
+        .input('id', sql.Int, id)
+        .query(`
+          DELETE et
+          FROM EquipmentTasks et
+          JOIN Equipment e ON et.equipmentId = e.id
+          WHERE e.areaId = @id
+        `);
+
+      // 3. Deletar equipamentos (se houver)
+      await transaction.request()
+        .input('id', sql.Int, id)
+        .query('DELETE FROM Equipment WHERE areaId = @id');
+
+      // 4. Deletar a área
+      const deleteResult = await transaction.request()
+        .input('id', sql.Int, id)
+        .query('DELETE FROM Areas WHERE id = @id');
+
+      if (deleteResult.rowsAffected[0] === 0) {
+        await transaction.rollback();
+        return res.status(404).json({ error: 'Área não encontrada' });
+      }
+
+      // Commit da transação
+      await transaction.commit();
+
+      res.json({ 
+        message: 'Área deletada com sucesso',
+        details: `Área "${area.name}" foi removida completamente do sistema`
+      });
+
+    } catch (error) {
+      // Rollback em caso de erro
+      await transaction.rollback();
+      throw error;
+    }
 
   } catch (error) {
     console.error('Erro ao deletar área:', error);

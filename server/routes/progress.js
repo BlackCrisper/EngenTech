@@ -369,7 +369,7 @@ router.put('/:equipmentId/:discipline', async (req, res) => {
 // Atualizar progresso com upload de fotos
 router.post('/update', async (req, res) => {
   try {
-    const { equipmentId, discipline, currentProgress, observations } = req.body;
+    const { equipmentId, discipline, currentProgress, observations, taskId } = req.body;
     const token = req.headers.authorization?.split(' ')[1];
 
     if (!token) {
@@ -393,20 +393,36 @@ router.post('/update', async (req, res) => {
       return res.status(404).json({ error: 'Equipamento não encontrado' });
     }
 
-    // Verificar se já existe tarefa para esta disciplina
-    const existingTask = await pool.request()
-      .input('equipmentId', sql.Int, equipmentId)
-      .input('discipline', sql.NVarChar, discipline)
-      .query('SELECT id, currentProgress FROM EquipmentTasks WHERE equipmentId = @equipmentId AND discipline = @discipline');
+    let taskIdToUpdate = taskId;
 
-    if (existingTask.recordset.length > 0) {
-      // Atualizar tarefa existente
-      const taskId = existingTask.recordset[0].id;
-      const previousProgress = existingTask.recordset[0].currentProgress;
+    // Se não foi fornecido taskId, procurar por disciplina (comportamento legado)
+    if (!taskIdToUpdate) {
+      const existingTask = await pool.request()
+        .input('equipmentId', sql.Int, equipmentId)
+        .input('discipline', sql.NVarChar, discipline)
+        .query('SELECT id, currentProgress FROM EquipmentTasks WHERE equipmentId = @equipmentId AND discipline = @discipline');
+
+      if (existingTask.recordset.length > 0) {
+        taskIdToUpdate = existingTask.recordset[0].id;
+      }
+    }
+
+    if (taskIdToUpdate) {
+      // Verificar se a tarefa existe e pertence ao equipamento
+      const taskResult = await pool.request()
+        .input('taskId', sql.Int, taskIdToUpdate)
+        .input('equipmentId', sql.Int, equipmentId)
+        .query('SELECT id, currentProgress FROM EquipmentTasks WHERE id = @taskId AND equipmentId = @equipmentId');
+
+      if (taskResult.recordset.length === 0) {
+        return res.status(404).json({ error: 'Tarefa não encontrada para este equipamento' });
+      }
+
+      const previousProgress = taskResult.recordset[0].currentProgress;
 
       // Inserir no histórico
       await pool.request()
-        .input('taskId', sql.Int, taskId)
+        .input('taskId', sql.Int, taskIdToUpdate)
         .input('userId', sql.Int, decoded.userId)
         .input('action', sql.NVarChar, 'updated')
         .input('previousProgress', sql.Decimal(5,2), previousProgress)
@@ -417,9 +433,9 @@ router.post('/update', async (req, res) => {
           VALUES (@taskId, @userId, @action, @previousProgress, @newProgress, @observations)
         `);
 
-      // Atualizar tarefa
+      // Atualizar tarefa específica
       await pool.request()
-        .input('taskId', sql.Int, taskId)
+        .input('taskId', sql.Int, taskIdToUpdate)
         .input('currentProgress', sql.Decimal(5,2), currentProgress)
         .input('description', sql.NVarChar, observations)
         .query(`
@@ -430,7 +446,7 @@ router.post('/update', async (req, res) => {
           WHERE id = @taskId
         `);
     } else {
-      // Criar nova tarefa
+      // Criar nova tarefa (comportamento legado)
       const result = await pool.request()
         .input('equipmentId', sql.Int, equipmentId)
         .input('discipline', sql.NVarChar, discipline)
@@ -443,11 +459,11 @@ router.post('/update', async (req, res) => {
           VALUES (@equipmentId, @discipline, @name, @currentProgress, @description)
         `);
 
-      const taskId = result.recordset[0].id;
+      const newTaskId = result.recordset[0].id;
 
       // Inserir no histórico
       await pool.request()
-        .input('taskId', sql.Int, taskId)
+        .input('taskId', sql.Int, newTaskId)
         .input('userId', sql.Int, decoded.userId)
         .input('action', sql.NVarChar, 'created')
         .input('newProgress', sql.Decimal(5,2), currentProgress)
@@ -462,7 +478,8 @@ router.post('/update', async (req, res) => {
       message: 'Progresso atualizado com sucesso',
       equipmentId,
       discipline,
-      currentProgress
+      currentProgress,
+      taskId: taskIdToUpdate
     });
 
   } catch (error) {
