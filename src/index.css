@@ -1,0 +1,134 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* EnginSync Industrial Design System - Paleta laranja profissional para ambiente industrial */
+
+@layer base {
+  :root {
+    /* Industrial Orange Palette - Inspirado em Mizu Cimentos */
+    --background: 210 11% 96%;
+    --foreground: 210 22% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 22% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 22% 15%;
+
+    /* Primary Orange - Cor principal industrial */
+    --primary: 18 100% 60%;  /* #FF6B35 */
+    --primary-foreground: 0 0% 100%;
+    --primary-muted: 18 85% 92%;
+    --primary-dark: 14 100% 45%;  /* #E55100 */
+
+    /* Industrial Gray Scale */
+    --secondary: 210 11% 71%;
+    --secondary-foreground: 210 22% 15%;
+
+    --muted: 210 11% 96%;
+    --muted-foreground: 210 10% 45%;
+
+    --accent: 18 100% 95%;
+    --accent-foreground: 14 100% 45%;
+
+    /* System Colors */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    
+    --warning: 45 93% 47%;
+    --warning-foreground: 0 0% 100%;
+
+    /* Interface Elements */
+    --border: 210 12% 88%;
+    --input: 210 12% 88%;
+    --ring: 18 100% 60%;
+
+    --radius: 0.5rem;
+
+    /* Industrial Gradients */
+    --gradient-orange: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-dark)));
+    --gradient-industrial: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted)));
+    
+    /* Shadows with orange glow */
+    --shadow-glow: 0 10px 30px -10px hsl(var(--primary) / 0.3);
+    --shadow-card: 0 4px 6px -1px hsl(210 22% 15% / 0.1);
+    
+    /* Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --sidebar-background: 210 22% 15%;
+    --sidebar-foreground: 210 11% 96%;
+    --sidebar-primary: 18 100% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 20% 20%;
+    --sidebar-accent-foreground: 210 11% 96%;
+    --sidebar-border: 210 20% 25%;
+  }
+
+  .dark {
+    /* Dark Mode - Industrial Night Theme */
+    --background: 210 22% 15%;
+    --foreground: 210 11% 96%;
+
+    --card: 210 20% 18%;
+    --card-foreground: 210 11% 96%;
+
+    --popover: 210 20% 18%;
+    --popover-foreground: 210 11% 96%;
+
+    --primary: 18 100% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 20% 25%;
+    --secondary-foreground: 210 11% 96%;
+
+    --muted: 210 20% 20%;
+    --muted-foreground: 210 8% 65%;
+
+    --accent: 18 100% 95%;
+    --accent-foreground: 14 100% 45%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 20% 25%;
+    --input: 210 20% 25%;
+    --ring: 18 100% 60%;
+
+    --sidebar-background: 210 22% 15%;
+    --sidebar-foreground: 210 11% 96%;
+    --sidebar-primary: 18 100% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 20% 20%;
+    --sidebar-accent-foreground: 210 11% 96%;
+    --sidebar-border: 210 20% 25%;
+    --sidebar-ring: 18 100% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-medium;
+  }
+
+  /* Industrial UI Enhancements */
+  .gradient-orange {
+    background: var(--gradient-orange);
+  }
+  
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+  
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+}
