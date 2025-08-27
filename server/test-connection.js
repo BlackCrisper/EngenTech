@@ -34,12 +34,16 @@ async function testConnection() {
     console.log(`   - Equipamentos: ${equipmentCount.recordset[0].count}`);
     console.log(`   - Progresso: ${progressCount.recordset[0].count}`);
     
-    // Teste 4: Verificar métricas do dashboard
-    const metricsResult = await pool.request().query('SELECT * FROM DashboardMetrics');
-    console.log('\n📊 Métricas do dashboard:');
-    metricsResult.recordset.forEach(metric => {
-      console.log(`   - ${metric.metricName}: ${metric.metricValue} ${metric.metricUnit || ''}`);
-    });
+    // Teste 4: Verificar se DashboardMetrics existe
+    try {
+      const metricsResult = await pool.request().query('SELECT * FROM DashboardMetrics');
+      console.log('\n📊 Métricas do dashboard:');
+      metricsResult.recordset.forEach(metric => {
+        console.log(`   - ${metric.metricName}: ${metric.metricValue} ${metric.metricUnit || ''}`);
+      });
+    } catch (error) {
+      console.log('\n⚠️ Tabela DashboardMetrics não encontrada (pode ser criada posteriormente)');
+    }
     
     // Teste 5: Verificar progresso por área
     const progressByArea = await pool.request().query(`

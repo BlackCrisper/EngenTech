@@ -13,13 +13,21 @@ const dbConfig = {
     encrypt: true,
     trustServerCertificate: true,
     enableArithAbort: true,
-    requestTimeout: 30000,
-    connectionTimeout: 30000,
+    requestTimeout: 15000,
+    connectionTimeout: 15000,
+    connectTimeout: 15000,
+    cancelTimeout: 5000,
+    packetSize: 4096,
+    useUTC: true,
+    abortTransactionOnError: true,
+    serverName: 'EngenTech.mssql.somee.com',
+    instanceName: '',
+    fallbackToDefaultDb: true,
   },
   pool: {
-    max: 10,
+    max: 1,
     min: 0,
-    idleTimeoutMillis: 30000
+    idleTimeoutMillis: 15000
   }
 };
 
