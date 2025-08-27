@@ -4,18 +4,18 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const dbConfig = {
-  server: process.env.DB_SERVER || 'EngenTech.mssql.somee.com',
-  database: process.env.DB_NAME || 'EngenTech',
-  user: process.env.DB_USER || 'EngenTech_SQLLogin_1',
-  password: process.env.DB_PASSWORD || '2i44vzc9rl',
+  server: process.env.DB_SERVER || 'SRV-ISO01\\SQLBC',
+  database: process.env.DB_NAME || 'EngTech',
+  user: process.env.DB_USER || 'sa',
+  password: process.env.DB_PASSWORD || 'BlackCrisper@2025',
   port: parseInt(process.env.DB_PORT) || 1433,
   options: {
-    encrypt: true,
+    encrypt: false,
     trustServerCertificate: true,
     enableArithAbort: true,
-    requestTimeout: 15000,
-    connectionTimeout: 15000,
-    connectTimeout: 15000,
+    requestTimeout: 30000,
+    connectionTimeout: 30000,
+    connectTimeout: 30000,
     cancelTimeout: 5000,
     packetSize: 4096,
     useUTC: true,
