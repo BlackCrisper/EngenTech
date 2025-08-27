@@ -20,14 +20,11 @@ const dbConfig = {
     packetSize: 4096,
     useUTC: true,
     abortTransactionOnError: true,
-    serverName: 'EngenTech.mssql.somee.com',
-    instanceName: '',
-    fallbackToDefaultDb: true,
   },
   pool: {
-    max: 1,
+    max: 10,
     min: 0,
-    idleTimeoutMillis: 15000
+    idleTimeoutMillis: 30000
   }
 };
 
