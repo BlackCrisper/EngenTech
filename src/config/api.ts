@@ -11,4 +11,9 @@ const getApiBaseUrl = () => {
   return `http://${currentHost}:3001/api`;
 };
 
+// Log para debug
+console.log('🌐 API Base URL:', getApiBaseUrl());
+console.log('📍 Current hostname:', window.location.hostname);
+console.log('🔗 Current URL:', window.location.href);
+
 export const API_BASE_URL = getApiBaseUrl();
