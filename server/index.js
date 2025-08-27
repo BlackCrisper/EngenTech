@@ -15,10 +15,8 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:8080', 'http://127.0.0.1:8080', 'http://10.11.100.3:8080', 'http://10.11.102.254:8080', 'http://10.11.103.254:8080'],
-  credentials: true, // Permitir credenciais
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  origin: true, // Aceitar qualquer origem
+  credentials: true // Permitir credenciais
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

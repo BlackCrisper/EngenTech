@@ -22,7 +22,7 @@ export const authenticateToken = async (req, res, next) => {
     
     const result = await pool.request()
       .input('userId', sql.Int, decoded.userId)
-      .query('SELECT id, name, email, role, active FROM Users WHERE id = @userId AND active = 1');
+      .query('SELECT id, name as username, email, role, active as isActive FROM Users WHERE id = @userId AND active = 1');
 
     if (result.recordset.length === 0) {
       console.log('❌ Usuário não encontrado ou inativo');
@@ -30,7 +30,7 @@ export const authenticateToken = async (req, res, next) => {
     }
 
     req.user = result.recordset[0];
-    console.log('✅ Usuário autenticado:', req.user.name, 'Role:', req.user.role);
+    console.log('✅ Usuário autenticado:', req.user.username, 'Role:', req.user.role);
     next();
   } catch (error) {
     console.error('❌ Erro na autenticação:', error);

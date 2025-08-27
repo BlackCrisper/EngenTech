@@ -87,6 +87,7 @@ router.post('/register', async (req, res) => {
     // Hash da senha
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    
     // Inserir novo usuário
     const result = await pool.request()
       .input('username', sql.NVarChar, username)

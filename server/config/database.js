@@ -4,10 +4,10 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const dbConfig = {
-  server: process.env.DB_SERVER || 'SRV-ISO01\\SQLBC',
-  database: process.env.DB_NAME || 'EngTech',
-  user: process.env.DB_USER || 'sa',
-  password: process.env.DB_PASSWORD || 'BlackCrisper@2025',
+  server: process.env.DB_SERVER || 'EngenTech.mssql.somee.com',
+  database: process.env.DB_NAME || 'EngenTech',
+  user: process.env.DB_USER || 'EngenTech_SQLLogin_1',
+  password: process.env.DB_PASSWORD || '2i44vzc9rl',
   port: parseInt(process.env.DB_PORT) || 1433,
   options: {
     encrypt: false,
