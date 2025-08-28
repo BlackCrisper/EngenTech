@@ -6,7 +6,6 @@ import {
   TrendingUp, 
   Users, 
   Clock, 
-  AlertTriangle,
   Download,
   FileText,
   Calendar,
@@ -51,17 +50,7 @@ import {
 } from 'recharts';
 
 const COLORS = ['#333333', '#666666', '#999999', '#CCCCCC', '#E5E5E5', '#F5F5F5'];
-const DISCIPLINE_COLORS = {
-  electrical: '#333333',
-  mechanical: '#666666', 
-  civil: '#999999'
-};
 
-const DISCIPLINE_ICONS = {
-  electrical: Zap,
-  mechanical: Wrench,
-  civil: Building
-};
 
 const ITEMS_PER_PAGE = 12;
 
@@ -80,11 +69,6 @@ export default function AdvancedReports() {
     queryFn: reportsService.getProgressOverview
   });
 
-  const { data: disciplineData, isLoading: disciplineLoading } = useQuery({
-    queryKey: ['reports-by-discipline'],
-    queryFn: reportsService.getByDiscipline
-  });
-
   const { data: equipmentData, isLoading: equipmentLoading } = useQuery({
     queryKey: ['reports-by-equipment'],
     queryFn: reportsService.getByEquipment
@@ -93,11 +77,6 @@ export default function AdvancedReports() {
   const { data: userProductivity, isLoading: productivityLoading } = useQuery({
     queryKey: ['reports-user-productivity'],
     queryFn: reportsService.getUserProductivity
-  });
-
-  const { data: overdueTasks, isLoading: overdueLoading } = useQuery({
-    queryKey: ['reports-overdue-tasks'],
-    queryFn: reportsService.getOverdueTasks
   });
 
   // Filtrar e paginar dados de equipamentos
@@ -156,14 +135,7 @@ export default function AdvancedReports() {
     return [...new Set(equipmentData.map((equipment: any) => equipment.areaName))].sort();
   }, [equipmentData]);
 
-  const getDisciplineLabel = (discipline: string) => {
-    switch (discipline) {
-      case 'electrical': return 'Elétrica';
-      case 'mechanical': return 'Mecânica';
-      case 'civil': return 'Civil';
-      default: return discipline;
-    }
-  };
+
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -206,18 +178,7 @@ export default function AdvancedReports() {
     console.log(`Exportando relatório: ${type}`);
   };
 
-  // Preparar dados para gráficos de pizza por disciplina
-  const prepareDisciplinePieData = (discipline: any) => {
-    const completed = discipline.completedTasks;
-    const inProgress = discipline.totalTasks - discipline.completedTasks - (discipline.pendingTasks || 0);
-    const pending = discipline.pendingTasks || 0;
-    
-    return [
-      { name: 'Concluídas', value: completed, color: '#333333' },
-      { name: 'Em Progresso', value: inProgress, color: '#666666' },
-      { name: 'Pendentes', value: pending, color: '#999999' }
-    ].filter(item => item.value > 0);
-  };
+
 
   // Preparar dados para gráfico geral de status
   const prepareOverallStatusData = () => {
@@ -268,12 +229,10 @@ export default function AdvancedReports() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-            <TabsTrigger value="discipline">Por Disciplina</TabsTrigger>
             <TabsTrigger value="equipment">Por Equipamento</TabsTrigger>
             <TabsTrigger value="productivity">Produtividade</TabsTrigger>
-            <TabsTrigger value="overdue">Tarefas Vencidas</TabsTrigger>
           </TabsList>
 
           {/* Visão Geral */}
@@ -295,26 +254,28 @@ export default function AdvancedReports() {
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                    <Card className="border-l-4 border-l-gray-600 bg-gradient-to-r from-gray-50 to-white">
                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                       <CardTitle className="text-sm font-medium">Total de Tarefas</CardTitle>
+                       <CardTitle className="text-sm font-medium">Total de Equipamentos</CardTitle>
                        <Target className="h-4 w-4 text-gray-600" />
                      </CardHeader>
                      <CardContent>
-                       <div className="text-2xl font-bold text-gray-700">{progressOverview.totalTasks}</div>
+                       <div className="text-2xl font-bold text-gray-700">{equipmentData?.length || 0}</div>
                        <p className="text-xs text-muted-foreground">
-                         {progressOverview.completionRate}% concluídas
+                         equipamentos no projeto
                        </p>
                      </CardContent>
                    </Card>
 
                    <Card className="border-l-4 border-l-gray-700 bg-gradient-to-r from-gray-50 to-white">
                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                       <CardTitle className="text-sm font-medium">Tarefas Concluídas</CardTitle>
+                       <CardTitle className="text-sm font-medium">Equipamentos 100%</CardTitle>
                        <CheckCircle className="h-4 w-4 text-gray-700" />
                      </CardHeader>
                      <CardContent>
-                       <div className="text-2xl font-bold text-gray-800">{progressOverview.completedTasks}</div>
+                       <div className="text-2xl font-bold text-gray-800">
+                         {equipmentData?.filter((equipment: any) => equipment.averageProgress >= 100).length || 0}
+                       </div>
                        <p className="text-xs text-muted-foreground">
-                         {progressOverview.inProgressTasks} em progresso
+                         com progresso completo
                        </p>
                      </CardContent>
                    </Card>
@@ -429,197 +390,12 @@ export default function AdvancedReports() {
                   </CardContent>
                 </Card>
 
-                {/* Gráficos por disciplina */}
-                {disciplineData && (
-                  <div className="space-y-6">
-                    <div className="text-center">
-                      <h3 className="text-xl font-semibold mb-2">Status por Disciplina</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Análise detalhada do progresso de cada disciplina
-                      </p>
-                    </div>
-                    
-                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                       {disciplineData.map((discipline: any) => {
-                         const IconComponent = DISCIPLINE_ICONS[discipline.discipline as keyof typeof DISCIPLINE_ICONS];
-                         const pieData = prepareDisciplinePieData(discipline);
-                         
-                         // Definir cores específicas para cada disciplina
-                         const getDisciplineCardStyle = (disciplineType: string) => {
-                           switch (disciplineType) {
-                             case 'electrical':
-                               return 'border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50 to-white';
-                             case 'mechanical':
-                               return 'border-l-4 border-l-green-500 bg-gradient-to-br from-green-50 to-white';
-                             case 'civil':
-                               return 'border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-50 to-white';
-                             default:
-                               return 'border-l-4 border-l-gray-500 bg-gradient-to-br from-gray-50 to-white';
-                           }
-                         };
-                         
-                         return (
-                           <Card key={discipline.discipline} className={`shadow-lg hover:shadow-xl transition-shadow ${getDisciplineCardStyle(discipline.discipline)}`}>
-                            <CardHeader className="pb-4">
-                                                             <CardTitle className="flex items-center gap-2 text-lg">
-                                 <IconComponent className="h-5 w-5" style={{ 
-                                   color: discipline.discipline === 'electrical' ? '#333333' : 
-                                          discipline.discipline === 'mechanical' ? '#333333' : 
-                                          discipline.discipline === 'civil' ? '#333333' : '#333333'
-                                 }} />
-                                 {getDisciplineLabel(discipline.discipline)}
-                               </CardTitle>
-                               <div className="flex justify-between items-center">
-                                 <span className="text-2xl font-bold" style={{ 
-                                   color: discipline.discipline === 'electrical' ? '#333333' : 
-                                          discipline.discipline === 'mechanical' ? '#333333 ' : 
-                                          discipline.discipline === 'civil' ? '#333333' : '#333333'
-                                 }}>
-                                   {discipline.averageProgress}%
-                                 </span>
-                                <Badge variant="outline">
-                                  {discipline.totalTasks} tarefas
-                                </Badge>
-                              </div>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                              {/* Gráfico de Pizza */}
-                              <div className="h-48">
-                                <ResponsiveContainer width="100%" height="100%">
-                                  <RechartsPieChart>
-                                    <Pie
-                                      data={pieData}
-                                      cx="50%"
-                                      cy="50%"
-                                      labelLine={false}
-                                      label={({ name, percent }) => 
-                                        percent > 0.1 ? `${(percent * 100).toFixed(0)}%` : ''
-                                      }
-                                      outerRadius={60}
-                                      fill="#8884d8"
-                                      dataKey="value"
-                                    >
-                                      {pieData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                      ))}
-                                    </Pie>
-                                    <Tooltip 
-                                      formatter={(value, name) => [value, name]}
-                                      labelFormatter={(label) => `${label}`}
-                                    />
-                                  </RechartsPieChart>
-                                </ResponsiveContainer>
-                              </div>
-                              
-                                                            {/* Estatísticas detalhadas */}
-                              <div className="space-y-2">
-                                 <div className="flex justify-between text-sm p-2 bg-gray-50 rounded border border-gray-200">
-                                   <span className="text-muted-foreground">Concluídas:</span>
-                                   <span className="font-medium text-gray-700">{discipline.completedTasks}</span>
-                                 </div>
-                                 <div className="flex justify-between text-sm p-2 bg-gray-100 rounded border border-gray-300">
-                                   <span className="text-muted-foreground">Em Progresso:</span>
-                                   <span className="font-medium text-gray-800">
-                                     {discipline.totalTasks - discipline.completedTasks - (discipline.pendingTasks || 0)}
-                                   </span>
-                                 </div>
-                                 <div className="flex justify-between text-sm p-2 bg-gray-50 rounded border border-gray-200">
-                                   <span className="text-muted-foreground">Pendentes:</span>
-                                   <span className="font-medium text-gray-700">{discipline.pendingTasks || 0}</span>
-                                 </div>
-                                 <div className="pt-2 border-t">
-                                   <div className="flex justify-between text-sm p-2 bg-gray-100 rounded border border-gray-300">
-                                     <span className="text-muted-foreground">Horas:</span>
-                                     <span className="font-medium text-gray-800">
-                                       {discipline.totalActualHours}h / {discipline.totalEstimatedHours}h
-                                     </span>
-                                   </div>
-                                 </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                
               </>
             ) : null}
           </TabsContent>
 
-          {/* Por Disciplina */}
-          <TabsContent value="discipline" className="space-y-6">
-            {disciplineLoading ? (
-              <div className="space-y-4">
-                {[...Array(3)].map((_, i) => (
-                  <Card key={i} className="animate-pulse">
-                    <CardContent className="p-6">
-                      <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
-                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : disciplineData ? (
-              <>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Progresso por Disciplina</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={disciplineData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="discipline" tickFormatter={getDisciplineLabel} />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                                                                         <Bar dataKey="averageProgress" fill="#666666" name="Progresso Médio (%)" />
-                        <Bar dataKey="completionRate" fill="#333333" name="Taxa de Conclusão (%)" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {disciplineData.map((discipline: any) => (
-                    <Card key={discipline.discipline}>
-                      <CardHeader>
-                        <CardTitle className="text-lg">{getDisciplineLabel(discipline.discipline)}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span>Progresso</span>
-                            <span>{discipline.averageProgress}%</span>
-                          </div>
-                          <Progress value={discipline.averageProgress} />
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                                                     <div>
-                             <span className="text-muted-foreground">Tarefas:</span>
-                             <div className="font-medium text-gray-800">{discipline.totalTasks}</div>
-                           </div>
-                           <div>
-                             <span className="text-muted-foreground">Concluídas:</span>
-                             <div className="font-medium text-gray-800">{discipline.completedTasks}</div>
-                           </div>
-                        </div>
-                        
-                                                 <div className="text-sm p-2 bg-gray-50 rounded border border-gray-200">
-                           <span className="text-muted-foreground">Horas:</span>
-                           <div className="font-medium text-gray-700">
-                             {discipline.totalActualHours}h / {discipline.totalEstimatedHours}h
-                           </div>
-                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </>
-            ) : null}
-          </TabsContent>
 
           {/* Por Equipamento */}
           <TabsContent value="equipment" className="space-y-6">
@@ -920,84 +696,7 @@ export default function AdvancedReports() {
             ) : null}
           </TabsContent>
 
-          {/* Tarefas Vencidas */}
-          <TabsContent value="overdue" className="space-y-6">
-            {overdueLoading ? (
-              <div className="space-y-4">
-                {[...Array(3)].map((_, i) => (
-                  <Card key={i} className="animate-pulse">
-                    <CardContent className="p-6">
-                      <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
-                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : overdueTasks ? (
-              <>
-                <Card>
-                  <CardHeader>
-                                         <CardTitle className="flex items-center gap-2">
-                       <AlertTriangle className="h-5 w-5 text-gray-800" />
-                       Tarefas Vencidas ({overdueTasks.length})
-                     </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {overdueTasks.length === 0 ? (
-                      <div className="text-center py-8">
-                                                 <CheckCircle className="h-12 w-12 text-gray-800 mx-auto mb-4" />
-                        <p className="text-muted-foreground">Nenhuma tarefa vencida!</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {overdueTasks.map((task: any) => (
-                                                     <Card key={task.id} className="border-gray-300">
-                            <CardContent className="p-4">
-                              <div className="flex items-center justify-between mb-2">
-                                <div>
-                                  <h4 className="font-semibold">{task.taskName}</h4>
-                                  <p className="text-sm text-muted-foreground">
-                                    {task.equipmentTag} - {task.equipmentName}
-                                  </p>
-                                </div>
-                                                                 <div className="text-right">
-                                   <Badge className="bg-gray-900 text-white">
-                                     {task.daysOverdue} dias vencida
-                                   </Badge>
-                                   <Badge className={getPriorityColor(task.priority)}>
-                                     {getPriorityLabel(task.priority)}
-                                   </Badge>
-                                 </div>
-                              </div>
-                              
-                                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                                 <div className="p-2 bg-gray-50 rounded border border-gray-200">
-                                   <span className="text-muted-foreground">Disciplina:</span>
-                                   <div className="font-medium text-gray-700">{getDisciplineLabel(task.discipline)}</div>
-                                 </div>
-                                 <div className="p-2 bg-gray-100 rounded border border-gray-300">
-                                   <span className="text-muted-foreground">Progresso:</span>
-                                   <div className="font-medium text-gray-800">{task.currentProgress}%</div>
-                                 </div>
-                                 <div className="p-2 bg-gray-50 rounded border border-gray-200">
-                                   <span className="text-muted-foreground">Vencimento:</span>
-                                   <div className="font-medium text-gray-700">{new Date(task.dueDate).toLocaleDateString()}</div>
-                                 </div>
-                                 <div className="p-2 bg-gray-100 rounded border border-gray-300">
-                                   <span className="text-muted-foreground">Área:</span>
-                                   <div className="font-medium text-gray-800">{task.areaName}</div>
-                                 </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </>
-            ) : null}
-          </TabsContent>
+
         </Tabs>
       </div>
     </MainLayout>
