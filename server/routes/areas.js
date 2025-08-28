@@ -11,7 +11,9 @@ router.use(authenticateToken);
 router.get('/', async (req, res) => {
   try {
     const pool = await getConnection();
-    const result = await pool.request()
+    
+    // Primeiro buscar áreas básicas
+    const areasResult = await pool.request()
       .query(`
         SELECT 
           a.id,
@@ -20,25 +22,50 @@ router.get('/', async (req, res) => {
           a.code,
           a.active,
           a.createdAt,
-          COUNT(DISTINCT CASE WHEN e.isParent = 0 THEN e.id END) as equipmentCount,
-          AVG(et.currentProgress) as averageProgress
+          COUNT(DISTINCT CASE WHEN e.isParent = 0 THEN e.id END) as equipmentCount
         FROM Areas a
         LEFT JOIN Equipment e ON a.id = e.areaId AND e.isParent = 0
-        LEFT JOIN EquipmentTasks et ON e.id = et.equipmentId
         GROUP BY a.id, a.name, a.description, a.code, a.active, a.createdAt
         ORDER BY a.name
       `);
 
-    const areas = result.recordset.map(item => ({
-      id: item.id,
-      name: item.name,
-      description: item.description,
-      status: item.active ? 'active' : 'inactive',
-      equipmentCount: item.equipmentCount,
-      averageProgress: Math.round(item.averageProgress || 0),
-      createdAt: item.createdAt,
-      updatedAt: item.createdAt
-    }));
+    // Para cada área, calcular o progresso médio por disciplina
+    const areas = [];
+    
+    for (const areaRow of areasResult.recordset) {
+      // Buscar progresso por disciplina para esta área
+      const progressResult = await pool.request()
+        .input('areaId', sql.Int, areaRow.id)
+        .query(`
+          SELECT 
+            et.discipline,
+            AVG(et.currentProgress) as disciplineProgress
+          FROM Equipment e
+          LEFT JOIN EquipmentTasks et ON e.id = et.equipmentId
+          WHERE e.areaId = @areaId 
+            AND et.currentProgress IS NOT NULL 
+            AND et.discipline IS NOT NULL
+          GROUP BY et.discipline
+        `);
+
+      // Calcular média das disciplinas
+      let averageProgress = 0;
+      if (progressResult.recordset.length > 0) {
+        const disciplineProgresses = progressResult.recordset.map(p => p.disciplineProgress);
+        averageProgress = disciplineProgresses.reduce((sum, p) => sum + p, 0) / disciplineProgresses.length;
+      }
+
+      areas.push({
+        id: areaRow.id,
+        name: areaRow.name,
+        description: areaRow.description,
+        status: areaRow.active ? 'active' : 'inactive',
+        equipmentCount: areaRow.equipmentCount,
+        averageProgress: Math.round(averageProgress),
+        createdAt: areaRow.createdAt,
+        updatedAt: areaRow.createdAt
+      });
+    }
 
     res.json(areas);
 
@@ -54,32 +81,54 @@ router.get('/:id', async (req, res) => {
     const { id } = req.params;
     const pool = await getConnection();
 
-    const result = await pool.request()
+    // Buscar dados básicos da área
+    const areaResult = await pool.request()
       .input('id', sql.Int, id)
       .query(`
         SELECT 
           a.*,
-          COUNT(DISTINCT CASE WHEN e.isParent = 0 THEN e.id END) as equipmentCount,
-          AVG(et.currentProgress) as averageProgress
+          COUNT(DISTINCT CASE WHEN e.isParent = 0 THEN e.id END) as equipmentCount
         FROM Areas a
         LEFT JOIN Equipment e ON a.id = e.areaId AND e.isParent = 0
-        LEFT JOIN EquipmentTasks et ON e.id = et.equipmentId
         WHERE a.id = @id
         GROUP BY a.id, a.name, a.description, a.code, a.active, a.createdAt
       `);
 
-    if (result.recordset.length === 0) {
+    if (areaResult.recordset.length === 0) {
       return res.status(404).json({ error: 'Área não encontrada' });
     }
 
-    const area = result.recordset[0];
+    const area = areaResult.recordset[0];
+
+    // Buscar progresso por disciplina para esta área
+    const progressResult = await pool.request()
+      .input('id', sql.Int, id)
+      .query(`
+        SELECT 
+          et.discipline,
+          AVG(et.currentProgress) as disciplineProgress
+        FROM Equipment e
+        LEFT JOIN EquipmentTasks et ON e.id = et.equipmentId
+        WHERE e.areaId = @id 
+          AND et.currentProgress IS NOT NULL 
+          AND et.discipline IS NOT NULL
+        GROUP BY et.discipline
+      `);
+
+    // Calcular média das disciplinas
+    let averageProgress = 0;
+    if (progressResult.recordset.length > 0) {
+      const disciplineProgresses = progressResult.recordset.map(p => p.disciplineProgress);
+      averageProgress = disciplineProgresses.reduce((sum, p) => sum + p, 0) / disciplineProgresses.length;
+    }
+
     res.json({
       id: area.id,
       name: area.name,
       description: area.description,
       status: area.active ? 'active' : 'inactive',
       equipmentCount: area.equipmentCount,
-      averageProgress: Math.round(area.averageProgress || 0),
+      averageProgress: Math.round(averageProgress),
       createdAt: area.createdAt,
       updatedAt: area.createdAt
     });

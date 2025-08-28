@@ -9,7 +9,7 @@ const router = express.Router();
 router.use(authenticateToken);
 
 // Buscar tarefas padrão por disciplina
-router.get('/standard', checkPermission('tasks', 'read'), async (req, res) => {
+router.get('/standard', async (req, res) => {
   try {
     const { discipline } = req.query;
     const pool = await getConnection();
@@ -41,7 +41,7 @@ router.get('/standard', checkPermission('tasks', 'read'), async (req, res) => {
 });
 
 // Buscar tarefas de um equipamento
-router.get('/equipment/:equipmentId', checkPermission('tasks', 'read'), async (req, res) => {
+router.get('/equipment/:equipmentId', async (req, res) => {
   try {
     const { equipmentId } = req.params;
     const pool = await getConnection();

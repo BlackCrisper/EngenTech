@@ -52,6 +52,8 @@ import reportsRoutes from './routes/reports.js';
 import sesmtRoutes from './routes/sesmt.js';
 import authRoutes from './routes/auth.js';
 import systemRoutes from './routes/system.js';
+import progressRoutes from './routes/progress.js';
+import tasksRoutes from './routes/tasks.js';
 
 // Rotas da API
 app.use('/api/dashboard', dashboardRoutes);
@@ -62,6 +64,8 @@ app.use('/api/reports', reportsRoutes);
 app.use('/api/sesmt', sesmtRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/system', systemRoutes);
+app.use('/api/progress', progressRoutes);
+app.use('/api/tasks', tasksRoutes);
 
 // Rota de health check
 app.get('/api/health', (req, res) => {
