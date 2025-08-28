@@ -11,6 +11,6 @@ export const config = {
   JWT_SECRET: process.env.JWT_SECRET || 'enginsync-super-secret-key-2024-mizu-cimentos',
 
   // Configurações do servidor
-  PORT: process.env.PORT || 3001,
+  PORT: process.env.PORT || 3010,
   NODE_ENV: process.env.NODE_ENV || 'development'
 };

@@ -386,7 +386,7 @@ router.delete('/standard-tasks/:id', authenticateToken, requireAdmin, async (req
 });
 
 // GET /api/system/stats - Estatísticas do sistema
-router.get('/stats', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/stats', async (req, res) => {
   try {
     const pool = await sql.connect(dbConfig);
     
