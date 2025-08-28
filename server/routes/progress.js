@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
     let query = `
       SELECT 
         e.id as equipmentId,
-        e.tag as equipmentTag,
+        e.equipmentTag as equipmentTag,
         e.type as equipmentName,
         a.name as areaName,
         et.discipline,
@@ -53,7 +53,7 @@ router.get('/', async (req, res) => {
       }
     }
 
-    query += ' ORDER BY e.tag, et.discipline';
+    query += ' ORDER BY e.equipmentTag, et.discipline';
 
     const request = pool.request();
     params.forEach(param => {
@@ -109,13 +109,13 @@ router.get('/area/:areaId', async (req, res) => {
       .query(`
         SELECT 
           e.id as equipmentId,
-          e.tag as equipmentTag,
+          e.equipmentTag as equipmentTag,
           e.type as equipmentName,
           a.name as areaName
         FROM Equipment e
         JOIN Areas a ON e.areaId = a.id
         WHERE a.id = @areaId
-        ORDER BY e.tag
+        ORDER BY e.equipmentTag
       `);
 
     // Para cada equipamento, buscar o progresso médio das tarefas
@@ -217,7 +217,7 @@ router.get('/:equipmentId', async (req, res) => {
       .query(`
         SELECT 
           e.id as equipmentId,
-          e.tag as equipmentTag,
+          e.equipmentTag as equipmentTag,
           e.type as equipmentName,
           a.name as areaName,
           et.discipline,

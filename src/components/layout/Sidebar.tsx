@@ -25,6 +25,8 @@ interface SidebarProps {
 
 const navigationItems = [
   { icon: Home, label: "Dashboard", href: "/", resource: "dashboard" },
+  { icon: BarChart3, label: "Dashboard Admin", href: "/admin-dashboard", resource: "admin-dashboard" },
+  { icon: Building2, label: "Projetos", href: "/projects", resource: "projects" },
   { icon: MapPin, label: "Áreas", href: "/areas", resource: "areas" },
   { icon: Wrench, label: "Equipamentos", href: "/equipment", resource: "equipment" },
   { icon: Shield, label: "SESMT", href: "/sesmt", resource: "sesmt" },
@@ -85,77 +87,118 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
           {/* Navigation */}
           <nav className="flex-1 space-y-1 p-4">
-            {navigationItems.map((item) => {
-              // Verificação específica para Usuários e Configurações (apenas admin/supervisor)
-              if (item.label === "Usuários" || item.label === "Configurações") {
-                const isAdminOrSupervisor = user?.role === 'admin' || user?.role === 'supervisor';
-                if (!isAdminOrSupervisor) {
-                  return null; // Ocultar o item
-                }
+            {(() => {
+              // Se for admin, mostrar apenas as opções de admin
+              if (user?.role === 'admin') {
+                const adminItems = [
+                  { icon: BarChart3, label: "Dashboard Admin", href: "/admin-dashboard", resource: "admin-dashboard" },
+                  { icon: Building2, label: "Projetos", href: "/projects", resource: "projects" },
+                  { icon: Users, label: "Usuários", href: "/users", resource: "users" },
+                  { icon: Settings, label: "Configurações", href: "/settings", resource: "settings" },
+                ];
+
+                return adminItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors",
+                      "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                      location.pathname === item.href
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                        : "text-sidebar-foreground/80"
+                    )}
+                  >
+                    <item.icon className="h-5 w-5 shrink-0" />
+                    {item.label}
+                  </Link>
+                ));
               }
-              
-              // Verificação específica para Equipamentos (apenas engenheiro+)
-              if (item.label === "Equipamentos") {
-                const isEngineerOrAbove = ['engineer', 'supervisor', 'admin'].includes(user?.role || '');
-                if (!isEngineerOrAbove) {
-                  return null; // Ocultar o item
+
+              // Para outros usuários, usar a lógica original
+              return navigationItems.map((item) => {
+                // Verificação específica para itens de admin
+                if (item.label === "Dashboard Admin" || item.label === "Projetos" || item.label === "Configurações") {
+                  if (user?.role !== 'admin') {
+                    return null; // Ocultar o item
+                  }
                 }
-              }
-              
-              // Verificação específica para SESMT (apenas segurança+)
-              if (item.label === "SESMT") {
-                const isSecurityOrAbove = ['sesmt', 'supervisor', 'admin'].includes(user?.role || '');
-                if (!isSecurityOrAbove) {
-                  return null; // Ocultar o item
+                
+                // Verificação específica para Usuários (apenas admin/supervisor)
+                if (item.label === "Usuários") {
+                  const isAdminOrSupervisor = user?.role === 'admin' || user?.role === 'supervisor';
+                  if (!isAdminOrSupervisor) {
+                    return null; // Ocultar o item
+                  }
                 }
-              }
-              
-              // Verificação baseada apenas na role do usuário
-              const userRole = user?.role || '';
-              
-              // Verificar se o usuário tem acesso baseado na role
-              const hasAccess = () => {
-                switch (item.resource) {
-                  case 'dashboard':
-                    return true; // Todos podem acessar dashboard
-                  case 'areas':
-                    return true; // Todos podem visualizar áreas
-                  case 'equipment':
-                    return ['engineer', 'supervisor', 'admin'].includes(userRole);
-                  case 'sesmt':
-                    return ['sesmt', 'supervisor', 'admin'].includes(userRole);
-                  case 'reports':
-                    return true; // Todos podem acessar relatórios
-                  case 'users':
-                    return ['supervisor', 'admin'].includes(userRole);
-                  case 'settings':
-                    return userRole === 'admin';
-                  default:
-                    return true;
+                
+                // Verificação específica para Equipamentos (apenas engenheiro+)
+                if (item.label === "Equipamentos") {
+                  const isEngineerOrAbove = ['engineer', 'supervisor', 'admin'].includes(user?.role || '');
+                  if (!isEngineerOrAbove) {
+                    return null; // Ocultar o item
+                  }
                 }
-              };
-              
-              if (!hasAccess()) {
-                return null;
-              }
-              
-              return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors",
-                    "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                    location.pathname === item.href
-                      ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
-                      : "text-sidebar-foreground/80"
-                  )}
-                >
-                  <item.icon className="h-5 w-5 shrink-0" />
-                  {item.label}
-                </Link>
-              );
-            })}
+                
+                // Verificação específica para SESMT (apenas segurança+)
+                if (item.label === "SESMT") {
+                  const isSecurityOrAbove = ['sesmt', 'supervisor', 'admin'].includes(user?.role || '');
+                  if (!isSecurityOrAbove) {
+                    return null; // Ocultar o item
+                  }
+                }
+                
+                // Verificação baseada apenas na role do usuário
+                const userRole = user?.role || '';
+                
+                // Verificar se o usuário tem acesso baseado na role
+                const hasAccess = () => {
+                  switch (item.resource) {
+                    case 'dashboard':
+                      return true; // Todos podem acessar dashboard
+                    case 'admin-dashboard':
+                      return userRole === 'admin';
+                    case 'projects':
+                      return userRole === 'admin';
+                    case 'areas':
+                      return true; // Todos podem visualizar áreas
+                    case 'equipment':
+                      return ['engineer', 'supervisor', 'admin'].includes(userRole);
+                    case 'sesmt':
+                      return ['sesmt', 'supervisor', 'admin'].includes(userRole);
+                    case 'reports':
+                      return true; // Todos podem acessar relatórios
+                    case 'users':
+                      return ['supervisor', 'admin'].includes(userRole);
+                    case 'settings':
+                      return userRole === 'admin';
+                    default:
+                      return true;
+                  }
+                };
+                
+                if (!hasAccess()) {
+                  return null;
+                }
+                
+                return (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors",
+                      "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                      location.pathname === item.href
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                        : "text-sidebar-foreground/80"
+                    )}
+                  >
+                    <item.icon className="h-5 w-5 shrink-0" />
+                    {item.label}
+                  </Link>
+                );
+              });
+            })()}
           </nav>
 
           {/* Footer */}

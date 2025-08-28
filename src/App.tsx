@@ -15,6 +15,10 @@ import Reports from "./pages/Reports";
 import Users from "./pages/Users";
 import Settings from "./pages/Settings";
 import SESMT from "./pages/SESMT";
+import AdminDashboard from "./pages/AdminDashboard";
+import Projects from "./pages/Projects";
+import ProjectDetails from "./pages/ProjectDetails";
+import ProjectUsers from "./pages/ProjectUsers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -182,6 +186,26 @@ const AppRoutes = () => (
       <PublicRoute>
         <Login />
       </PublicRoute>
+    } />
+    <Route path="/admin-dashboard" element={
+      <AdminOnlyRoute>
+        <AdminDashboard />
+      </AdminOnlyRoute>
+    } />
+    <Route path="/projects" element={
+      <AdminOnlyRoute>
+        <Projects />
+      </AdminOnlyRoute>
+    } />
+    <Route path="/projects/:projectId" element={
+      <AdminOnlyRoute>
+        <ProjectDetails />
+      </AdminOnlyRoute>
+    } />
+    <Route path="/projects/:projectId/users" element={
+      <AdminOnlyRoute>
+        <ProjectUsers />
+      </AdminOnlyRoute>
     } />
     <Route path="/areas" element={
       <ProtectedRoute>

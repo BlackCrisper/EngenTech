@@ -20,6 +20,11 @@ router.get('/standard', async (req, res) => {
       WHERE isActive = 1
     `;
     
+    // Filtrar por projeto se não for admin
+    if (req.user.role !== 'admin') {
+      query += ` AND projectId = @projectId`;
+    }
+    
     if (discipline) {
       query += ` AND discipline = @discipline`;
     }
@@ -27,6 +32,9 @@ router.get('/standard', async (req, res) => {
     query += ` ORDER BY discipline, sortOrder`;
     
     const request = pool.request();
+    if (req.user.role !== 'admin') {
+      request.input('projectId', sql.Int, req.user.projectId);
+    }
     if (discipline) {
       request.input('discipline', sql.NVarChar, discipline);
     }
@@ -46,34 +54,47 @@ router.get('/equipment/:equipmentId', async (req, res) => {
     const { equipmentId } = req.params;
     const pool = await getConnection();
     
-    const result = await pool.request()
-      .input('equipmentId', sql.Int, equipmentId)
-      .query(`
-        SELECT 
-          et.id,
-          et.equipmentId,
-          et.standardTaskId,
-          et.discipline,
-          et.name,
-          et.description,
-          et.currentProgress,
-          et.targetProgress,
-          et.estimatedHours,
-          et.actualHours,
-          et.status,
-          et.priority,
-          et.startDate,
-          et.dueDate,
-          et.completedDate,
-          et.isCustom,
-          et.createdAt,
-          et.updatedAt,
-          st.name as standardTaskName
-        FROM EquipmentTasks et
-        LEFT JOIN StandardTasks st ON et.standardTaskId = st.id
-        WHERE et.equipmentId = @equipmentId
-        ORDER BY et.discipline, et.createdAt
-      `);
+    let query = `
+      SELECT 
+        et.id,
+        et.equipmentId,
+        et.standardTaskId,
+        et.discipline,
+        et.name,
+        et.description,
+        et.currentProgress,
+        et.targetProgress,
+        et.estimatedHours,
+        et.actualHours,
+        et.status,
+        et.priority,
+        et.startDate,
+        et.dueDate,
+        et.completedDate,
+        et.isCustom,
+        et.createdAt,
+        et.updatedAt,
+        st.name as standardTaskName
+      FROM EquipmentTasks et
+      LEFT JOIN StandardTasks st ON et.standardTaskId = st.id
+      WHERE et.equipmentId = @equipmentId
+    `;
+
+    // Filtrar por projeto se não for admin
+    if (req.user.role !== 'admin') {
+      query += ` AND et.projectId = @projectId`;
+    }
+
+    query += ` ORDER BY et.discipline, et.createdAt`;
+
+    const request = pool.request()
+      .input('equipmentId', sql.Int, equipmentId);
+    
+    if (req.user.role !== 'admin') {
+      request.input('projectId', sql.Int, req.user.projectId);
+    }
+
+    const result = await request.query(query);
     
     res.json(result.recordset);
     
@@ -398,7 +419,7 @@ router.delete('/:taskId', checkPermission('tasks', 'delete'), auditLog('delete',
           et.currentProgress,
           et.status,
           et.isCustom,
-          e.tag as equipmentTag,
+          e.equipmentTag as equipmentTag,
           e.isParent as equipmentIsParent,
           a.name as areaName
         FROM EquipmentTasks et

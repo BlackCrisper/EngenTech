@@ -12,27 +12,55 @@ router.use(authenticateToken);
 router.get('/', async (req, res) => {
   try {
     const pool = await getConnection();
-    const result = await pool.request()
-      .query(`
-        SELECT 
-          id, name as username, email, name as fullName, role, sector, active as isActive, createdAt, createdAt as updatedAt
-        FROM Users
-        ORDER BY name
-      `);
+    
+    let query = `
+      SELECT 
+        id, username, email, name as fullName, role, sector, active as isActive, projectId, createdAt, createdAt as updatedAt
+      FROM Users
+    `;
 
-    const users = result.recordset.map(item => ({
-      id: item.id,
-      username: item.username,
-      email: item.email,
-      fullName: item.fullName,
-      role: item.role,
-      sector: item.sector || 'other',
-      isActive: item.isActive,
-      createdAt: item.createdAt,
-      updatedAt: item.updatedAt
-    }));
+    // Filtrar por projeto se não for admin
+    if (req.user.role === 'admin') {
+      // Admin vê todos os usuários
+      query += ' ORDER BY username';
+      const result = await pool.request().query(query);
+      
+      const users = result.recordset.map(item => ({
+        id: item.id,
+        username: item.username,
+        email: item.email,
+        fullName: item.fullName,
+        role: item.role,
+        sector: item.sector || 'other',
+        isActive: item.isActive,
+        projectId: item.projectId,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt
+      }));
 
-    res.json(users);
+      res.json(users);
+    } else {
+      // Outros usuários veem apenas usuários do seu projeto
+      query += ' WHERE projectId = @projectId ORDER BY username';
+      const result = await pool.request()
+        .input('projectId', sql.Int, req.user.projectId)
+        .query(query);
+      
+      const users = result.recordset.map(item => ({
+        id: item.id,
+        username: item.username,
+        email: item.email,
+        fullName: item.fullName,
+        role: item.role,
+        sector: item.sector || 'other',
+        isActive: item.isActive,
+        projectId: item.projectId,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt
+      }));
+
+      res.json(users);
+    }
 
   } catch (error) {
     console.error('Erro ao buscar usuários:', error);
@@ -50,7 +78,7 @@ router.get('/:id', async (req, res) => {
       .input('id', sql.Int, id)
       .query(`
         SELECT 
-          id, name as username, email, name as fullName, role, sector, active as isActive, createdAt, createdAt as updatedAt
+          id, username, email, name as fullName, role, sector, active as isActive, projectId, createdAt, createdAt as updatedAt
         FROM Users
         WHERE id = @id
       `);
@@ -68,6 +96,7 @@ router.get('/:id', async (req, res) => {
       role: user.role,
       sector: user.sector || 'other',
       isActive: user.isActive,
+      projectId: user.projectId,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt
     });
@@ -84,7 +113,12 @@ router.post('/', async (req, res) => {
     const { username, email, fullName, role = 'viewer', sector = 'other', isActive = true, password = 'password' } = req.body;
 
     if (!username || !email || !fullName) {
-      return res.status(400).json({ error: 'Nome de usuário, email e nome completo são obrigatórios' });
+      return res.status(400).json({ error: 'Nome de usuário, email e departamento são obrigatórios' });
+    }
+
+    // Validação de permissões para criar usuários
+    if (role === 'admin' && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Apenas administradores podem criar usuários administradores' });
     }
 
     const pool = await getConnection();
@@ -93,7 +127,7 @@ router.post('/', async (req, res) => {
     const existingUser = await pool.request()
       .input('username', sql.NVarChar, username)
       .input('email', sql.NVarChar, email)
-      .query('SELECT id FROM Users WHERE name = @username OR email = @email');
+      .query('SELECT id FROM Users WHERE username = @username OR email = @email');
 
     if (existingUser.recordset.length > 0) {
       return res.status(400).json({ error: 'Usuário ou email já existe' });
@@ -102,19 +136,32 @@ router.post('/', async (req, res) => {
     // Hash da senha
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Determinar projectId baseado no role do usuário que está criando
+    let projectId = null;
+    if (req.user.role !== 'admin') {
+      // Supervisor e outros usuários sempre criam usuários no seu próprio projeto
+      projectId = req.user.projectId;
+    } else {
+      // Admin pode criar usuários para qualquer projeto, mas por padrão usa o projeto padrão
+      const defaultProject = await pool.request()
+        .query('SELECT TOP 1 id FROM Projects ORDER BY id');
+      projectId = defaultProject.recordset[0]?.id || 1;
+    }
+
     // Inserir novo usuário
     const result = await pool.request()
       .input('username', sql.NVarChar, username)
       .input('email', sql.NVarChar, email)
-      .input('fullName', sql.NVarChar, fullName)
+      .input('name', sql.NVarChar, fullName)
       .input('role', sql.NVarChar, role)
       .input('sector', sql.NVarChar, sector)
       .input('password', sql.NVarChar, hashedPassword)
       .input('isActive', sql.Bit, isActive)
+      .input('projectId', sql.Int, projectId)
       .query(`
-        INSERT INTO Users (name, email, password, role, sector, active)
-        OUTPUT INSERTED.id, INSERTED.name, INSERTED.email, INSERTED.role, INSERTED.sector, INSERTED.active
-        VALUES (@username, @email, @password, @role, @sector, @isActive)
+        INSERT INTO Users (username, email, name, password, role, sector, active, projectId)
+        OUTPUT INSERTED.id, INSERTED.username, INSERTED.email, INSERTED.name, INSERTED.role, INSERTED.sector, INSERTED.active
+        VALUES (@username, @email, @name, @password, @role, @sector, @isActive, @projectId)
       `);
 
     const newUser = result.recordset[0];
@@ -123,7 +170,7 @@ router.post('/', async (req, res) => {
       message: 'Usuário criado com sucesso',
       user: {
         id: newUser.id,
-        username: newUser.name,
+        username: newUser.username,
         email: newUser.email,
         fullName: newUser.name,
         role: newUser.role,
@@ -160,7 +207,7 @@ router.put('/:id', async (req, res) => {
       const usernameExists = await pool.request()
         .input('username', sql.NVarChar, username)
         .input('id', sql.Int, id)
-        .query('SELECT id FROM Users WHERE name = @username AND id != @id');
+        .query('SELECT id FROM Users WHERE username = @username AND id != @id');
 
       if (usernameExists.recordset.length > 0) {
         return res.status(400).json({ error: 'Usuário com este username já existe' });
@@ -184,8 +231,13 @@ router.put('/:id', async (req, res) => {
     const params = [{ name: 'id', type: sql.Int, value: id }];
 
     if (username) {
-      updateQuery += ', name = @username';
+      updateQuery += ', username = @username';
       params.push({ name: 'username', type: sql.NVarChar, value: username });
+    }
+
+    if (fullName) {
+      updateQuery += ', name = @fullName';
+      params.push({ name: 'fullName', type: sql.NVarChar, value: fullName });
     }
 
     if (email) {

@@ -16,7 +16,7 @@ router.get('/', async (req, res) => {
     let query = `
       SELECT 
         e.id,
-        e.tag as equipmentTag,
+        e.equipmentTag,
         e.type as name,
         e.areaId,
         e.description,
@@ -25,40 +25,8 @@ router.get('/', async (req, res) => {
         e.hierarchyLevel,
         e.parentTag,
         a.name as areaName,
-        CASE 
-          WHEN e.isParent = 1 THEN (
-            SELECT AVG(child_progress.averageProgress)
-            FROM (
-              SELECT 
-                child.id,
-                AVG(COALESCE(et.currentProgress, 0)) as averageProgress
-              FROM Equipment child
-              LEFT JOIN EquipmentTasks et ON child.id = et.equipmentId
-              WHERE child.parentTag = e.tag
-              GROUP BY child.id
-            ) child_progress
-          )
-          ELSE AVG(et.currentProgress)
-        END as averageProgress,
-        CASE 
-          WHEN e.isParent = 1 THEN (
-            SELECT COUNT(*)
-            FROM Equipment child
-            WHERE child.parentTag = e.tag
-          )
-          ELSE COUNT(et.id)
-        END as progressCount,
-        -- Determinar disciplina principal baseada na maioria das tarefas
-        CASE 
-          WHEN e.isParent = 0 THEN (
-            SELECT TOP 1 et2.discipline
-            FROM EquipmentTasks et2
-            WHERE et2.equipmentId = e.id
-            GROUP BY et2.discipline
-            ORDER BY COUNT(*) DESC
-          )
-          ELSE NULL
-        END as primaryDiscipline
+        AVG(et.currentProgress) as averageProgress,
+        COUNT(et.id) as progressCount
       FROM Equipment e
       JOIN Areas a ON e.areaId = a.id
       LEFT JOIN EquipmentTasks et ON e.id = et.equipmentId
@@ -66,6 +34,12 @@ router.get('/', async (req, res) => {
     `;
 
     const params = [];
+
+    // Filtrar por projeto se não for admin
+    if (req.user.role !== 'admin') {
+      query += ' AND e.projectId = @projectId';
+      params.push({ name: 'projectId', type: sql.Int, value: req.user.projectId });
+    }
 
     if (area) {
       // Verificar se é um ID numérico ou nome
@@ -78,7 +52,7 @@ router.get('/', async (req, res) => {
       }
     }
 
-    query += ' GROUP BY e.id, e.tag, e.type, e.areaId, e.description, e.createdAt, e.isParent, e.hierarchyLevel, e.parentTag, a.name ORDER BY e.hierarchyLevel, e.tag';
+    query += ' GROUP BY e.id, e.equipmentTag, e.type, e.areaId, e.description, e.createdAt, e.isParent, e.hierarchyLevel, e.parentTag, a.name ORDER BY e.hierarchyLevel, e.equipmentTag';
 
     const request = pool.request();
     params.forEach(param => {
@@ -101,7 +75,6 @@ router.get('/', async (req, res) => {
       parentTag: item.parentTag,
       averageProgress: Math.round(item.averageProgress || 0),
       progressCount: item.progressCount || 0,
-      primaryDiscipline: item.primaryDiscipline, // Nova propriedade
       createdAt: item.createdAt,
       updatedAt: item.createdAt,
       children: [] // Será preenchido abaixo
@@ -113,6 +86,7 @@ router.get('/', async (req, res) => {
 
   } catch (error) {
     console.error('Erro ao buscar equipamentos:', error);
+    console.error('Stack trace:', error.stack);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
@@ -128,7 +102,7 @@ router.get('/:id', async (req, res) => {
       .query(`
         SELECT 
           e.id,
-          e.tag as equipmentTag,
+          e.equipmentTag,
           e.type as name,
           e.areaId,
           e.description,
@@ -137,13 +111,13 @@ router.get('/:id', async (req, res) => {
           e.hierarchyLevel,
           e.parentTag,
           a.name as areaName,
-          AVG(p.currentProgress) as averageProgress,
-          COUNT(p.id) as progressCount
+          AVG(et.currentProgress) as averageProgress,
+          COUNT(et.id) as progressCount
         FROM Equipment e
         JOIN Areas a ON e.areaId = a.id
-        LEFT JOIN Progress p ON e.id = p.equipmentId
+        LEFT JOIN EquipmentTasks et ON e.id = et.equipmentId
         WHERE e.id = @id
-        GROUP BY e.id, e.tag, e.type, e.areaId, e.description, e.createdAt, e.isParent, e.hierarchyLevel, e.parentTag, a.name
+        GROUP BY e.id, e.equipmentTag, e.type, e.areaId, e.description, e.createdAt, e.isParent, e.hierarchyLevel, e.parentTag, a.name
       `);
 
     if (result.recordset.length === 0) {
@@ -183,7 +157,7 @@ router.get('/parents/list', async (req, res) => {
       .query(`
         SELECT 
           e.id,
-          e.tag as equipmentTag,
+          e.equipmentTag,
           e.type as name,
           e.areaId,
           e.description,
@@ -192,7 +166,7 @@ router.get('/parents/list', async (req, res) => {
         FROM Equipment e
         JOIN Areas a ON e.areaId = a.id
         WHERE e.isParent = 1
-        ORDER BY e.tag
+        ORDER BY e.equipmentTag
       `);
 
     const parentEquipment = result.recordset.map(item => ({
@@ -224,7 +198,7 @@ router.get('/:parentTag/children', async (req, res) => {
       .query(`
         SELECT 
           e.id,
-          e.tag as equipmentTag,
+          e.equipmentTag,
           e.type as name,
           e.areaId,
           e.description,
@@ -239,8 +213,8 @@ router.get('/:parentTag/children', async (req, res) => {
         JOIN Areas a ON e.areaId = a.id
         LEFT JOIN Progress p ON e.id = p.equipmentId
         WHERE e.parentTag = @parentTag
-        GROUP BY e.id, e.tag, e.type, e.areaId, e.description, e.createdAt, e.isParent, e.hierarchyLevel, e.parentTag, a.name
-        ORDER BY e.tag
+        GROUP BY e.id, e.equipmentTag, e.type, e.areaId, e.description, e.createdAt, e.isParent, e.hierarchyLevel, e.parentTag, a.name
+        ORDER BY e.equipmentTag
       `);
 
     const children = result.recordset.map(item => ({
@@ -282,7 +256,7 @@ router.post('/', async (req, res) => {
     // Verificar se equipamento já existe
     const existingEquipment = await pool.request()
       .input('equipmentTag', sql.NVarChar, equipmentTag)
-      .query('SELECT id FROM Equipment WHERE tag = @equipmentTag');
+              .query('SELECT id FROM Equipment WHERE equipmentTag = @equipmentTag');
 
     if (existingEquipment.recordset.length > 0) {
       return res.status(400).json({ error: 'Equipamento com esta tag já existe' });
@@ -302,7 +276,7 @@ router.post('/', async (req, res) => {
     if (!isParent && parentTag) {
       const parentExists = await pool.request()
         .input('parentTag', sql.NVarChar, parentTag)
-        .query('SELECT id, isParent, tag FROM Equipment WHERE tag = @parentTag');
+        .query('SELECT id, isParent, equipmentTag FROM Equipment WHERE equipmentTag = @parentTag');
 
       if (parentExists.recordset.length === 0) {
         return res.status(400).json({ error: 'Equipamento pai não encontrado' });
@@ -336,18 +310,30 @@ router.post('/', async (req, res) => {
     // Usar o nome como description e type como 'parent' ou 'child'
     const equipmentDescription = description || name;
 
+    // Determinar projectId baseado no role do usuário
+    let projectId = null;
+    if (req.user.role !== 'admin') {
+      projectId = req.user.projectId;
+    } else {
+      // Admin pode criar equipamentos para qualquer projeto, mas por padrão usa o projeto padrão
+      const defaultProject = await pool.request()
+        .query('SELECT TOP 1 id FROM Projects ORDER BY id');
+      projectId = defaultProject.recordset[0]?.id || 1;
+    }
+
     const result = await pool.request()
-      .input('tag', sql.NVarChar, equipmentTag)
+      .input('equipmentTag', sql.NVarChar, equipmentTag)
       .input('type', sql.NVarChar, equipmentType)
       .input('areaId', sql.Int, areaId)
       .input('description', sql.NVarChar, equipmentDescription)
       .input('isParent', sql.Bit, isParent)
       .input('hierarchyLevel', sql.Int, hierarchyLevel)
       .input('parentTag', sql.NVarChar, parentTag)
+      .input('projectId', sql.Int, projectId)
       .query(`
-        INSERT INTO Equipment (tag, type, areaId, description, isParent, hierarchyLevel, parentTag)
-        OUTPUT INSERTED.id, INSERTED.tag, INSERTED.type, INSERTED.areaId, INSERTED.description, INSERTED.isParent, INSERTED.hierarchyLevel, INSERTED.parentTag, INSERTED.createdAt
-        VALUES (@tag, @type, @areaId, @description, @isParent, @hierarchyLevel, @parentTag)
+        INSERT INTO Equipment (equipmentTag, type, areaId, description, isParent, hierarchyLevel, parentTag, projectId)
+        OUTPUT INSERTED.id, INSERTED.equipmentTag, INSERTED.type, INSERTED.areaId, INSERTED.description, INSERTED.isParent, INSERTED.hierarchyLevel, INSERTED.parentTag, INSERTED.createdAt
+        VALUES (@equipmentTag, @type, @areaId, @description, @isParent, @hierarchyLevel, @parentTag, @projectId)
       `);
 
     const newEquipment = result.recordset[0];
@@ -356,7 +342,7 @@ router.post('/', async (req, res) => {
       message: 'Equipamento criado com sucesso',
       equipment: {
         id: newEquipment.id,
-        equipmentTag: newEquipment.tag,
+        equipmentTag: newEquipment.equipmentTag,
         name: newEquipment.description, // Usar description como name
         areaId: newEquipment.areaId,
         description: newEquipment.description,
@@ -396,7 +382,7 @@ router.put('/:id', async (req, res) => {
       const tagExists = await pool.request()
         .input('equipmentTag', sql.NVarChar, equipmentTag)
         .input('id', sql.Int, id)
-        .query('SELECT id FROM Equipment WHERE tag = @equipmentTag AND id != @id');
+        .query('SELECT id FROM Equipment WHERE equipmentTag = @equipmentTag AND id != @id');
 
       if (tagExists.recordset.length > 0) {
         return res.status(400).json({ error: 'Equipamento com esta tag já existe' });
@@ -419,7 +405,7 @@ router.put('/:id', async (req, res) => {
     if (parentTag && !isParent) {
       const parentExists = await pool.request()
         .input('parentTag', sql.NVarChar, parentTag)
-        .query('SELECT id, isParent, tag FROM Equipment WHERE tag = @parentTag');
+        .query('SELECT id, isParent, equipmentTag FROM Equipment WHERE equipmentTag = @parentTag');
 
       if (parentExists.recordset.length === 0) {
         return res.status(400).json({ error: 'Equipamento pai não encontrado' });
@@ -454,7 +440,7 @@ router.put('/:id', async (req, res) => {
     const params = [{ name: 'id', type: sql.Int, value: id }];
 
     if (equipmentTag) {
-      updateQuery += ', tag = @equipmentTag';
+      updateQuery += ', equipmentTag = @equipmentTag';
       params.push({ name: 'equipmentTag', type: sql.NVarChar, value: equipmentTag });
     }
 
@@ -523,7 +509,7 @@ router.delete('/:id', async (req, res) => {
       .query(`
         SELECT 
           e.id, 
-          e.tag, 
+          e.equipmentTag, 
           e.isParent,
           e.parentTag,
           a.name as areaName
@@ -538,7 +524,7 @@ router.delete('/:id', async (req, res) => {
 
     const equipment = existingEquipment.recordset[0];
 
-    console.log(`🔍 Iniciando validação para equipamento: ${equipment.tag}`);
+    console.log(`🔍 Iniciando validação para equipamento: ${equipment.equipmentTag}`);
     console.log(`  - ID: ${equipment.id}`);
     console.log(`  - isParent: ${equipment.isParent}`);
     console.log(`  - parentTag: ${equipment.parentTag}`);
@@ -547,15 +533,15 @@ router.delete('/:id', async (req, res) => {
 
     // 1. Se é equipamento PAI: verificar se não tem filhos
     if (equipment.isParent) {
-      console.log(`🔍 Validando equipamento pai: ${equipment.tag}`);
+      console.log(`🔍 Validando equipamento pai: ${equipment.equipmentTag}`);
       
       // Validação mais robusta - verificar filhos de múltiplas formas
       const childrenCount1 = await pool.request()
-        .input('parentTag', sql.NVarChar, equipment.tag)
+        .input('parentTag', sql.NVarChar, equipment.equipmentTag)
         .query('SELECT COUNT(*) as count FROM Equipment WHERE parentTag = @parentTag AND isParent = 0');
 
       const childrenCount2 = await pool.request()
-        .input('parentTag', sql.NVarChar, equipment.tag)
+        .input('parentTag', sql.NVarChar, equipment.equipmentTag)
         .query('SELECT COUNT(*) as count FROM Equipment WHERE parentTag = @parentTag');
 
       const count1 = childrenCount1.recordset[0].count;
@@ -568,24 +554,24 @@ router.delete('/:id', async (req, res) => {
       const finalCount = Math.max(count1, count2);
       
       if (finalCount > 0) {
-        console.log(`  ❌ VALIDAÇÃO BLOQUEADA: Equipamento pai ${equipment.tag} tem ${finalCount} filho(s)`);
+        console.log(`  ❌ VALIDAÇÃO BLOQUEADA: Equipamento pai ${equipment.equipmentTag} tem ${finalCount} filho(s)`);
         
         // Buscar detalhes dos filhos para debug
         const childrenDetails = await pool.request()
-          .input('parentTag', sql.NVarChar, equipment.tag)
+          .input('parentTag', sql.NVarChar, equipment.equipmentTag)
           .query('SELECT id, tag, isParent, parentTag FROM Equipment WHERE parentTag = @parentTag');
         
         console.log(`  📋 Detalhes dos filhos:`);
         for (const child of childrenDetails.recordset) {
-          console.log(`    - ID: ${child.id}, Tag: ${child.tag}, isParent: ${child.isParent}, parentTag: ${child.parentTag}`);
+          console.log(`    - ID: ${child.id}, Tag: ${child.equipmentTag}, isParent: ${child.isParent}, parentTag: ${child.parentTag}`);
         }
         
         return res.status(400).json({ 
           error: 'Não é possível deletar um equipamento pai que possui equipamentos filhos',
-          details: `O equipamento ${equipment.tag} possui ${finalCount} equipamento(s) filho(s). Remova todos os filhos primeiro.`
+          details: `O equipamento ${equipment.equipmentTag} possui ${finalCount} equipamento(s) filho(s). Remova todos os filhos primeiro.`
         });
       } else {
-        console.log(`  ✅ VALIDAÇÃO APROVADA: Equipamento pai ${equipment.tag} não tem filhos`);
+        console.log(`  ✅ VALIDAÇÃO APROVADA: Equipamento pai ${equipment.equipmentTag} não tem filhos`);
       }
     }
 
@@ -598,7 +584,7 @@ router.delete('/:id', async (req, res) => {
       if (tasksCount.recordset[0].count > 0) {
         return res.status(400).json({ 
           error: 'Não é possível deletar um equipamento filho que possui tarefas',
-          details: `O equipamento ${equipment.tag} possui ${tasksCount.recordset[0].count} tarefa(s). Remova todas as tarefas primeiro.`
+          details: `O equipamento ${equipment.equipmentTag} possui ${tasksCount.recordset[0].count} tarefa(s). Remova todas as tarefas primeiro.`
         });
       }
     }
@@ -616,7 +602,7 @@ router.delete('/:id', async (req, res) => {
     if (historyCount.recordset[0].count > 0) {
       return res.status(400).json({ 
         error: 'Não é possível deletar um equipamento que possui histórico de tarefas',
-        details: `O equipamento ${equipment.tag} possui ${historyCount.recordset[0].count} registro(s) de histórico. O histórico é mantido para auditoria.`
+        details: `O equipamento ${equipment.equipmentTag} possui ${historyCount.recordset[0].count} registro(s) de histórico. O histórico é mantido para auditoria.`
       });
     }
 
@@ -633,7 +619,7 @@ router.delete('/:id', async (req, res) => {
     if (photosCount.recordset[0].count > 0) {
       return res.status(400).json({ 
         error: 'Não é possível deletar um equipamento que possui fotos/documentos anexados',
-        details: `O equipamento ${equipment.tag} possui ${photosCount.recordset[0].count} registro(s) com fotos/documentos. Remova os anexos primeiro.`
+        details: `O equipamento ${equipment.equipmentTag} possui ${photosCount.recordset[0].count} registro(s) com fotos/documentos. Remova os anexos primeiro.`
       });
     }
 
@@ -643,7 +629,7 @@ router.delete('/:id', async (req, res) => {
     // Verificar novamente se o equipamento ainda é pai e tem filhos (dupla verificação)
     if (equipment.isParent) {
       const finalCheck = await pool.request()
-        .input('parentTag', sql.NVarChar, equipment.tag)
+        .input('parentTag', sql.NVarChar, equipment.equipmentTag)
         .query('SELECT COUNT(*) as count FROM Equipment WHERE parentTag = @parentTag');
       
       const finalCount = finalCheck.recordset[0].count;
@@ -653,13 +639,13 @@ router.delete('/:id', async (req, res) => {
         console.log(`  ❌ VALIDAÇÃO FINAL FALHOU: Equipamento ainda tem filhos!`);
         return res.status(400).json({ 
           error: 'Validação final falhou: equipamento pai ainda possui filhos',
-          details: `O equipamento ${equipment.tag} ainda possui ${finalCount} filho(s). A operação foi cancelada por segurança.`
+          details: `O equipamento ${equipment.equipmentTag} ainda possui ${finalCount} filho(s). A operação foi cancelada por segurança.`
         });
       }
     }
     
     // SE PASSAR POR TODAS AS VALIDAÇÕES, PROSSEGUIR COM A DELEÇÃO
-    console.log(`✅ Todas as validações passaram. Iniciando deleção do equipamento ${equipment.tag}`);
+    console.log(`✅ Todas as validações passaram. Iniciando deleção do equipamento ${equipment.equipmentTag}`);
 
     // Iniciar transação para garantir consistência
     const transaction = new sql.Transaction(pool);
@@ -671,7 +657,7 @@ router.delete('/:id', async (req, res) => {
       if (equipment.isParent) {
         console.log(`  🔍 Validação dentro da transação...`);
         const transactionCheck = await transaction.request()
-          .input('parentTag', sql.NVarChar, equipment.tag)
+          .input('parentTag', sql.NVarChar, equipment.equipmentTag)
           .query('SELECT COUNT(*) as count FROM Equipment WHERE parentTag = @parentTag');
         
         const transactionCount = transactionCheck.recordset[0].count;
@@ -682,7 +668,7 @@ router.delete('/:id', async (req, res) => {
           await transaction.rollback();
           return res.status(400).json({ 
             error: 'Validação na transação falhou: equipamento pai ainda possui filhos',
-            details: `O equipamento ${equipment.tag} ainda possui ${transactionCount} filho(s). A operação foi cancelada.`
+            details: `O equipamento ${equipment.equipmentTag} ainda possui ${transactionCount} filho(s). A operação foi cancelada.`
           });
         }
       }
@@ -715,7 +701,7 @@ router.delete('/:id', async (req, res) => {
       // 5. Se for equipamento pai, atualizar filhos para remover referência
       if (equipment.isParent) {
         await transaction.request()
-          .input('parentTag', sql.NVarChar, equipment.tag)
+          .input('parentTag', sql.NVarChar, equipment.equipmentTag)
           .query('UPDATE Equipment SET parentTag = NULL WHERE parentTag = @parentTag');
       }
 
@@ -735,8 +721,8 @@ router.delete('/:id', async (req, res) => {
       res.json({ 
         message: 'Equipamento deletado com sucesso',
         details: equipment.isParent 
-          ? `Equipamento pai ${equipment.tag} da área ${equipment.areaName} foi removido`
-          : `Equipamento filho ${equipment.tag} da área ${equipment.areaName} foi removido`
+          ? `Equipamento pai ${equipment.equipmentTag} da área ${equipment.areaName} foi removido`
+          : `Equipamento filho ${equipment.equipmentTag} da área ${equipment.areaName} foi removido`
       });
 
     } catch (error) {

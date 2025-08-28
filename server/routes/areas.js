@@ -12,22 +12,34 @@ router.get('/', async (req, res) => {
   try {
     const pool = await getConnection();
     
-    // Primeiro buscar áreas básicas
-    const areasResult = await pool.request()
-      .query(`
-        SELECT 
-          a.id,
-          a.name,
-          a.description,
-          a.code,
-          a.active,
-          a.createdAt,
-          COUNT(DISTINCT CASE WHEN e.isParent = 0 THEN e.id END) as equipmentCount
-        FROM Areas a
-        LEFT JOIN Equipment e ON a.id = e.areaId AND e.isParent = 0
-        GROUP BY a.id, a.name, a.description, a.code, a.active, a.createdAt
-        ORDER BY a.name
-      `);
+    // Filtrar por projeto se não for admin
+    let query = `
+      SELECT 
+        a.id,
+        a.name,
+        a.description,
+        a.code,
+        a.active,
+        a.createdAt,
+        COUNT(DISTINCT CASE WHEN e.isParent = 0 THEN e.id END) as equipmentCount
+      FROM Areas a
+      LEFT JOIN Equipment e ON a.id = e.areaId AND e.isParent = 0
+    `;
+
+    if (req.user.role === 'admin') {
+      // Admin vê todas as áreas
+      query += ' GROUP BY a.id, a.name, a.description, a.code, a.active, a.createdAt ORDER BY a.name';
+    } else {
+      // Outros usuários veem apenas áreas do seu projeto
+      query += ' WHERE a.projectId = @projectId GROUP BY a.id, a.name, a.description, a.code, a.active, a.createdAt ORDER BY a.name';
+    }
+
+    const request = pool.request();
+    if (req.user.role !== 'admin') {
+      request.input('projectId', sql.Int, req.user.projectId);
+    }
+
+    const areasResult = await request.query(query);
 
     // Para cada área, calcular o progresso médio por disciplina
     const areas = [];
@@ -86,7 +98,12 @@ router.get('/:id', async (req, res) => {
       .input('id', sql.Int, id)
       .query(`
         SELECT 
-          a.*,
+          a.id,
+          a.name,
+          a.description,
+          a.code,
+          a.active,
+          a.createdAt,
           COUNT(DISTINCT CASE WHEN e.isParent = 0 THEN e.id END) as equipmentCount
         FROM Areas a
         LEFT JOIN Equipment e ON a.id = e.areaId AND e.isParent = 0
@@ -159,15 +176,27 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Área com este nome já existe' });
     }
 
+    // Determinar projectId baseado no role do usuário
+    let projectId = null;
+    if (req.user.role !== 'admin') {
+      projectId = req.user.projectId;
+    } else {
+      // Admin pode criar áreas para qualquer projeto, mas por padrão usa o projeto padrão
+      const defaultProject = await pool.request()
+        .query('SELECT TOP 1 id FROM Projects ORDER BY id');
+      projectId = defaultProject.recordset[0]?.id || 1;
+    }
+
     const result = await pool.request()
       .input('name', sql.NVarChar, name)
       .input('description', sql.NVarChar, description)
       .input('code', sql.NVarChar, name.toUpperCase().replace(/\s+/g, '_'))
       .input('active', sql.Bit, status === 'active' ? 1 : 0)
+      .input('projectId', sql.Int, projectId)
       .query(`
-        INSERT INTO Areas (name, description, code, active)
+        INSERT INTO Areas (name, description, code, active, projectId)
         OUTPUT INSERTED.id, INSERTED.name, INSERTED.description, INSERTED.code, INSERTED.active, INSERTED.createdAt
-        VALUES (@name, @description, @code, @active)
+        VALUES (@name, @description, @code, @active, @projectId)
       `);
 
     const newArea = result.recordset[0];

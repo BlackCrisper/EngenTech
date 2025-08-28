@@ -22,7 +22,7 @@ export const authenticateToken = async (req, res, next) => {
     
     const result = await pool.request()
       .input('userId', sql.Int, decoded.userId)
-      .query('SELECT id, name as username, email, role, active as isActive FROM Users WHERE id = @userId AND active = 1');
+      .query('SELECT id, username, email, role, active as isActive, projectId FROM Users WHERE id = @userId AND active = 1');
 
     if (result.recordset.length === 0) {
       console.log('❌ Usuário não encontrado ou inativo');

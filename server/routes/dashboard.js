@@ -13,17 +13,28 @@ router.get('/metrics', async (req, res) => {
     const pool = await getConnection();
 
     // 1. Calcular progresso total baseado no progresso das tarefas
-    const progressResult = await pool.request()
-      .query(`
-        SELECT 
-          AVG(currentProgress) as averageProgress,
-          COUNT(*) as totalTasks,
-          COUNT(CASE WHEN currentProgress = 100 THEN 1 END) as completedTasks,
-          COUNT(CASE WHEN currentProgress < 50 THEN 1 END) as lowProgressTasks,
-          COUNT(CASE WHEN currentProgress >= 50 AND currentProgress < 100 THEN 1 END) as inProgressTasks
-        FROM EquipmentTasks
-        WHERE currentProgress IS NOT NULL
-      `);
+    let progressQuery = `
+      SELECT 
+        AVG(currentProgress) as averageProgress,
+        COUNT(*) as totalTasks,
+        COUNT(CASE WHEN currentProgress = 100 THEN 1 END) as completedTasks,
+        COUNT(CASE WHEN currentProgress < 50 THEN 1 END) as lowProgressTasks,
+        COUNT(CASE WHEN currentProgress >= 50 AND currentProgress < 100 THEN 1 END) as inProgressTasks
+      FROM EquipmentTasks
+      WHERE currentProgress IS NOT NULL
+    `;
+    
+    // Filtrar por projeto se não for admin
+    if (req.user.role !== 'admin') {
+      progressQuery += ' AND projectId = @projectId';
+    }
+    
+    const progressRequest = pool.request();
+    if (req.user.role !== 'admin') {
+      progressRequest.input('projectId', sql.Int, req.user.projectId);
+    }
+    
+    const progressResult = await progressRequest.query(progressQuery);
 
     const progressData = progressResult.recordset[0];
     const averageProgress = progressData?.averageProgress || 0;
@@ -33,48 +44,89 @@ router.get('/metrics', async (req, res) => {
     const inProgressTasks = progressData?.inProgressTasks || 0;
 
     // 2. Contar equipamentos por status
-    const equipmentResult = await pool.request()
-      .query(`
-        SELECT 
-          COUNT(CASE WHEN isParent = 1 THEN 1 END) as parentEquipment,
-          COUNT(CASE WHEN isParent = 0 OR isParent IS NULL THEN 1 END) as childEquipment
-        FROM Equipment
-      `);
+    let equipmentQuery = `
+      SELECT 
+        COUNT(CASE WHEN isParent = 1 THEN 1 END) as parentEquipment,
+        COUNT(CASE WHEN isParent = 0 OR isParent IS NULL THEN 1 END) as childEquipment
+      FROM Equipment
+    `;
+    
+    // Filtrar por projeto se não for admin
+    if (req.user.role !== 'admin') {
+      equipmentQuery += ' WHERE projectId = @projectId';
+    }
+    
+    const equipmentRequest = pool.request();
+    if (req.user.role !== 'admin') {
+      equipmentRequest.input('projectId', sql.Int, req.user.projectId);
+    }
+    
+    const equipmentResult = await equipmentRequest.query(equipmentQuery);
 
     const equipmentData = equipmentResult.recordset[0];
 
     // 3. Contar áreas ativas e progresso por área
-    const areasResult = await pool.request()
-      .query(`
+    let areasQuery = `
+      SELECT 
+        COUNT(*) as totalAreas,
+        COUNT(CASE WHEN active = 1 THEN 1 END) as activeAreas,
+        AVG(areaProgress.averageProgress) as overallAreaProgress
+      FROM Areas a
+      LEFT JOIN (
         SELECT 
-          COUNT(*) as totalAreas,
-          COUNT(CASE WHEN active = 1 THEN 1 END) as activeAreas,
-          AVG(areaProgress.averageProgress) as overallAreaProgress
-        FROM Areas a
-        LEFT JOIN (
-          SELECT 
-            e.areaId,
-            AVG(et.currentProgress) as averageProgress
-          FROM Equipment e
-          LEFT JOIN EquipmentTasks et ON e.id = et.equipmentId
-          WHERE et.currentProgress IS NOT NULL
-          GROUP BY e.areaId
-        ) areaProgress ON a.id = areaProgress.areaId
-      `);
+          e.areaId,
+          AVG(et.currentProgress) as averageProgress
+        FROM Equipment e
+        LEFT JOIN EquipmentTasks et ON e.id = et.equipmentId
+        WHERE et.currentProgress IS NOT NULL
+    `;
+    
+    // Filtrar por projeto se não for admin
+    if (req.user.role !== 'admin') {
+      areasQuery += ' AND e.projectId = @projectId';
+    }
+    
+    areasQuery += `
+        GROUP BY e.areaId
+      ) areaProgress ON a.id = areaProgress.areaId
+    `;
+    
+    // Filtrar áreas por projeto se não for admin
+    if (req.user.role !== 'admin') {
+      areasQuery += ' WHERE a.projectId = @projectId';
+    }
+    
+    const areasRequest = pool.request();
+    if (req.user.role !== 'admin') {
+      areasRequest.input('projectId', sql.Int, req.user.projectId);
+    }
+    
+    const areasResult = await areasRequest.query(areasQuery);
 
     const areasData = areasResult.recordset[0];
 
 
 
     // 5. Calcular tarefas vencidas (se houver datas de vencimento)
-    const overdueTasksResult = await pool.request()
-      .query(`
-        SELECT COUNT(*) as overdueTasks
-        FROM EquipmentTasks
-        WHERE dueDate IS NOT NULL 
-          AND dueDate < GETDATE() 
-          AND currentProgress < 100
-      `);
+    let overdueTasksQuery = `
+      SELECT COUNT(*) as overdueTasks
+      FROM EquipmentTasks
+      WHERE dueDate IS NOT NULL 
+        AND dueDate < GETDATE() 
+        AND currentProgress < 100
+    `;
+    
+    // Filtrar por projeto se não for admin
+    if (req.user.role !== 'admin') {
+      overdueTasksQuery += ' AND projectId = @projectId';
+    }
+    
+    const overdueTasksRequest = pool.request();
+    if (req.user.role !== 'admin') {
+      overdueTasksRequest.input('projectId', sql.Int, req.user.projectId);
+    }
+    
+    const overdueTasksResult = await overdueTasksRequest.query(overdueTasksQuery);
 
     const overdueTasks = overdueTasksResult.recordset[0]?.overdueTasks || 0;
 
@@ -89,16 +141,28 @@ router.get('/metrics', async (req, res) => {
     const recentUpdates = recentActivityResult.recordset[0]?.recentUpdates || 0;
 
     // 7. Calcular progresso por disciplina
-    const disciplineProgressResult = await pool.request()
-      .query(`
-        SELECT 
-          discipline,
-          AVG(currentProgress) as averageProgress,
-          COUNT(*) as taskCount,
-          COUNT(CASE WHEN currentProgress = 100 THEN 1 END) as completedCount
-        FROM EquipmentTasks
-        GROUP BY discipline
-      `);
+    let disciplineProgressQuery = `
+      SELECT 
+        discipline,
+        AVG(currentProgress) as averageProgress,
+        COUNT(*) as taskCount,
+        COUNT(CASE WHEN currentProgress = 100 THEN 1 END) as completedCount
+      FROM EquipmentTasks
+    `;
+    
+    // Filtrar por projeto se não for admin
+    if (req.user.role !== 'admin') {
+      disciplineProgressQuery += ' WHERE projectId = @projectId';
+    }
+    
+    disciplineProgressQuery += ' GROUP BY discipline';
+    
+    const disciplineProgressRequest = pool.request();
+    if (req.user.role !== 'admin') {
+      disciplineProgressRequest.input('projectId', sql.Int, req.user.projectId);
+    }
+    
+    const disciplineProgressResult = await disciplineProgressRequest.query(disciplineProgressQuery);
 
     const disciplineProgress = disciplineProgressResult.recordset.map(item => ({
       discipline: item.discipline,
@@ -108,21 +172,35 @@ router.get('/metrics', async (req, res) => {
     }));
 
     // 8. Calcular equipamentos com maior progresso
-    const topEquipmentResult = await pool.request()
-      .query(`
-        SELECT TOP 5
-          e.tag as equipmentTag,
-          e.type as equipmentName,
-          a.name as areaName,
-          AVG(et.currentProgress) as averageProgress,
-          COUNT(et.id) as taskCount
-        FROM Equipment e
-        JOIN Areas a ON e.areaId = a.id
-        LEFT JOIN EquipmentTasks et ON e.id = et.equipmentId
-        WHERE et.currentProgress IS NOT NULL
-        GROUP BY e.id, e.tag, e.type, a.name
-        ORDER BY averageProgress DESC
-      `);
+    let topEquipmentQuery = `
+      SELECT TOP 5
+        e.equipmentTag as equipmentTag,
+        e.type as equipmentName,
+        a.name as areaName,
+        AVG(et.currentProgress) as averageProgress,
+        COUNT(et.id) as taskCount
+      FROM Equipment e
+      JOIN Areas a ON e.areaId = a.id
+      LEFT JOIN EquipmentTasks et ON e.id = et.equipmentId
+      WHERE et.currentProgress IS NOT NULL
+    `;
+    
+    // Filtrar por projeto se não for admin
+    if (req.user.role !== 'admin') {
+      topEquipmentQuery += ' AND e.projectId = @projectId';
+    }
+    
+    topEquipmentQuery += `
+      GROUP BY e.id, e.equipmentTag, e.type, a.name
+      ORDER BY averageProgress DESC
+    `;
+    
+    const topEquipmentRequest = pool.request();
+    if (req.user.role !== 'admin') {
+      topEquipmentRequest.input('projectId', sql.Int, req.user.projectId);
+    }
+    
+    const topEquipmentResult = await topEquipmentRequest.query(topEquipmentQuery);
 
     const topEquipment = topEquipmentResult.recordset.map(item => ({
       equipmentTag: item.equipmentTag,
@@ -133,22 +211,36 @@ router.get('/metrics', async (req, res) => {
     }));
 
     // 9. Calcular equipamentos com menor progresso (que precisam de atenção)
-    const lowProgressEquipmentResult = await pool.request()
-      .query(`
-        SELECT TOP 5
-          e.tag as equipmentTag,
-          e.type as equipmentName,
-          a.name as areaName,
-          AVG(et.currentProgress) as averageProgress,
-          COUNT(et.id) as taskCount
-        FROM Equipment e
-        JOIN Areas a ON e.areaId = a.id
-        LEFT JOIN EquipmentTasks et ON e.id = et.equipmentId
-        WHERE et.currentProgress IS NOT NULL
-        GROUP BY e.id, e.tag, e.type, a.name
-        HAVING AVG(et.currentProgress) < 50
-        ORDER BY averageProgress ASC
-      `);
+    let lowProgressEquipmentQuery = `
+      SELECT TOP 5
+        e.equipmentTag as equipmentTag,
+        e.type as equipmentName,
+        a.name as areaName,
+        AVG(et.currentProgress) as averageProgress,
+        COUNT(et.id) as taskCount
+      FROM Equipment e
+      JOIN Areas a ON e.areaId = a.id
+      LEFT JOIN EquipmentTasks et ON e.id = et.equipmentId
+      WHERE et.currentProgress IS NOT NULL
+    `;
+    
+    // Filtrar por projeto se não for admin
+    if (req.user.role !== 'admin') {
+      lowProgressEquipmentQuery += ' AND e.projectId = @projectId';
+    }
+    
+    lowProgressEquipmentQuery += `
+      GROUP BY e.id, e.equipmentTag, e.type, a.name
+      HAVING AVG(et.currentProgress) < 50
+      ORDER BY averageProgress ASC
+    `;
+    
+    const lowProgressEquipmentRequest = pool.request();
+    if (req.user.role !== 'admin') {
+      lowProgressEquipmentRequest.input('projectId', sql.Int, req.user.projectId);
+    }
+    
+    const lowProgressEquipmentResult = await lowProgressEquipmentRequest.query(lowProgressEquipmentQuery);
 
     const lowProgressEquipment = lowProgressEquipmentResult.recordset.map(item => ({
       equipmentTag: item.equipmentTag,

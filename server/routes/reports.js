@@ -13,19 +13,51 @@ router.get('/data', checkPermission('reports', 'read'), async (req, res) => {
     const pool = await getConnection();
     
     // Buscar métricas gerais
-    const metricsResult = await pool.request().query(`
+    let metricsQuery = `
       SELECT 
         COUNT(*) as totalTasks,
         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completedTasks,
         AVG(currentProgress) as averageProgress
       FROM EquipmentTasks
-    `);
+    `;
+    
+    // Filtrar por projeto se não for admin
+    if (req.user.role !== 'admin') {
+      metricsQuery += ' WHERE projectId = @projectId';
+    }
+    
+    const metricsRequest = pool.request();
+    if (req.user.role !== 'admin') {
+      metricsRequest.input('projectId', sql.Int, req.user.projectId);
+    }
+    
+    const metricsResult = await metricsRequest.query(metricsQuery);
     
     // Contar equipamentos
-    const equipmentResult = await pool.request().query('SELECT COUNT(*) as total FROM Equipment');
+    let equipmentQuery = 'SELECT COUNT(*) as total FROM Equipment';
+    if (req.user.role !== 'admin') {
+      equipmentQuery += ' WHERE projectId = @projectId';
+    }
+    
+    const equipmentRequest = pool.request();
+    if (req.user.role !== 'admin') {
+      equipmentRequest.input('projectId', sql.Int, req.user.projectId);
+    }
+    
+    const equipmentResult = await equipmentRequest.query(equipmentQuery);
     
     // Contar alertas (progresso < 50%)
-    const alertsResult = await pool.request().query('SELECT COUNT(*) as total FROM EquipmentTasks WHERE currentProgress < 50');
+    let alertsQuery = 'SELECT COUNT(*) as total FROM EquipmentTasks WHERE currentProgress < 50';
+    if (req.user.role !== 'admin') {
+      alertsQuery += ' AND projectId = @projectId';
+    }
+    
+    const alertsRequest = pool.request();
+    if (req.user.role !== 'admin') {
+      alertsRequest.input('projectId', sql.Int, req.user.projectId);
+    }
+    
+    const alertsResult = await alertsRequest.query(alertsQuery);
     
     const metrics = metricsResult.recordset[0];
     
@@ -48,7 +80,7 @@ router.get('/progress-overview', checkPermission('reports', 'read'), async (req,
   try {
     const pool = await getConnection();
     
-    const result = await pool.request().query(`
+    let query = `
       SELECT 
         COUNT(*) as totalTasks,
         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completedTasks,
@@ -58,7 +90,19 @@ router.get('/progress-overview', checkPermission('reports', 'read'), async (req,
         SUM(estimatedHours) as totalEstimatedHours,
         SUM(actualHours) as totalActualHours
       FROM EquipmentTasks
-    `);
+    `;
+    
+    // Filtrar por projeto se não for admin
+    if (req.user.role !== 'admin') {
+      query += ' WHERE projectId = @projectId';
+    }
+    
+    const request = pool.request();
+    if (req.user.role !== 'admin') {
+      request.input('projectId', sql.Int, req.user.projectId);
+    }
+    
+    const result = await request.query(query);
     
     const stats = result.recordset[0];
     
@@ -84,7 +128,7 @@ router.get('/by-discipline', checkPermission('reports', 'read'), async (req, res
   try {
     const pool = await getConnection();
     
-    const result = await pool.request().query(`
+    let query = `
       SELECT 
         discipline,
         COUNT(*) as totalTasks,
@@ -93,9 +137,21 @@ router.get('/by-discipline', checkPermission('reports', 'read'), async (req, res
         SUM(estimatedHours) as totalEstimatedHours,
         SUM(actualHours) as totalActualHours
       FROM EquipmentTasks
-      GROUP BY discipline
-      ORDER BY discipline
-    `);
+    `;
+    
+    // Filtrar por projeto se não for admin
+    if (req.user.role !== 'admin') {
+      query += ' WHERE projectId = @projectId';
+    }
+    
+    query += ' GROUP BY discipline ORDER BY discipline';
+    
+    const request = pool.request();
+    if (req.user.role !== 'admin') {
+      request.input('projectId', sql.Int, req.user.projectId);
+    }
+    
+    const result = await request.query(query);
     
     const disciplines = result.recordset.map(row => ({
       discipline: row.discipline,
@@ -120,9 +176,9 @@ router.get('/by-equipment', checkPermission('reports', 'read'), async (req, res)
   try {
     const pool = await getConnection();
     
-    const result = await pool.request().query(`
+    let query = `
       SELECT 
-        e.tag as equipmentTag,
+        e.equipmentTag as equipmentTag,
         e.description as equipmentName,
         a.name as areaName,
         COUNT(et.id) as totalTasks,
@@ -134,9 +190,21 @@ router.get('/by-equipment', checkPermission('reports', 'read'), async (req, res)
       LEFT JOIN Areas a ON e.areaId = a.id
       LEFT JOIN EquipmentTasks et ON e.id = et.equipmentId
       WHERE e.isParent = 0
-      GROUP BY e.id, e.tag, e.description, a.name
-      ORDER BY e.tag
-    `);
+    `;
+    
+    // Filtrar por projeto se não for admin
+    if (req.user.role !== 'admin') {
+      query += ' AND e.projectId = @projectId';
+    }
+    
+    query += ' GROUP BY e.id, e.equipmentTag, e.description, a.name ORDER BY e.equipmentTag';
+    
+    const request = pool.request();
+    if (req.user.role !== 'admin') {
+      request.input('projectId', sql.Int, req.user.projectId);
+    }
+    
+    const result = await request.query(query);
     
     const equipment = result.recordset.map(row => ({
       equipmentTag: row.equipmentTag,
@@ -163,7 +231,7 @@ router.get('/user-productivity', checkPermission('reports', 'read'), async (req,
   try {
     const pool = await getConnection();
     
-    const result = await pool.request().query(`
+    let query = `
       SELECT 
         u.name as userName,
         u.role,
@@ -174,9 +242,21 @@ router.get('/user-productivity', checkPermission('reports', 'read'), async (req,
       FROM Users u
       LEFT JOIN TaskHistory th ON u.id = th.userId
       WHERE u.active = 1
-      GROUP BY u.id, u.name, u.role
-      ORDER BY totalUpdates DESC
-    `);
+    `;
+    
+    // Filtrar por projeto se não for admin
+    if (req.user.role !== 'admin') {
+      query += ' AND u.projectId = @projectId';
+    }
+    
+    query += ' GROUP BY u.id, u.name, u.role ORDER BY totalUpdates DESC';
+    
+    const request = pool.request();
+    if (req.user.role !== 'admin') {
+      request.input('projectId', sql.Int, req.user.projectId);
+    }
+    
+    const result = await request.query(query);
     
     const users = result.recordset.map(row => ({
       userName: row.userName,
@@ -201,7 +281,7 @@ router.get('/overdue-tasks', checkPermission('reports', 'read'), async (req, res
   try {
     const pool = await getConnection();
     
-    const result = await pool.request().query(`
+    let query = `
       SELECT 
         et.id,
         et.name as taskName,
@@ -210,7 +290,7 @@ router.get('/overdue-tasks', checkPermission('reports', 'read'), async (req, res
         et.status,
         et.dueDate,
         et.priority,
-        e.tag as equipmentTag,
+        e.equipmentTag as equipmentTag,
         e.description as equipmentName,
         a.name as areaName,
         DATEDIFF(day, et.dueDate, GETDATE()) as daysOverdue
@@ -219,8 +299,21 @@ router.get('/overdue-tasks', checkPermission('reports', 'read'), async (req, res
       LEFT JOIN Areas a ON e.areaId = a.id
       WHERE et.dueDate < GETDATE() 
         AND et.status != 'completed'
-      ORDER BY et.dueDate ASC
-    `);
+    `;
+    
+    // Filtrar por projeto se não for admin
+    if (req.user.role !== 'admin') {
+      query += ' AND et.projectId = @projectId';
+    }
+    
+    query += ' ORDER BY et.dueDate ASC';
+    
+    const request = pool.request();
+    if (req.user.role !== 'admin') {
+      request.input('projectId', sql.Int, req.user.projectId);
+    }
+    
+    const result = await request.query(query);
     
     const overdueTasks = result.recordset.map(row => ({
       id: row.id,

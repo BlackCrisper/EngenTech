@@ -18,7 +18,7 @@ router.post('/login', async (req, res) => {
     const pool = await getConnection();
     const result = await pool.request()
       .input('username', sql.NVarChar, username)
-      .query('SELECT * FROM Users WHERE name = @username AND active = 1');
+      .query('SELECT * FROM Users WHERE username = @username AND active = 1');
 
     const user = result.recordset[0];
 
@@ -36,8 +36,9 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign(
       { 
         userId: user.id, 
-        username: user.name, 
-        role: user.role 
+        username: user.username, 
+        role: user.role,
+        projectId: user.projectId
       },
       config.JWT_SECRET,
       { expiresIn: '8h' }
@@ -48,10 +49,11 @@ router.post('/login', async (req, res) => {
       token,
       user: {
         id: user.id,
-        username: user.name,
+        username: user.username,
         email: user.email,
-        fullName: user.name,
+        fullName: user.fullName,
         role: user.role,
+        projectId: user.projectId,
         sector: user.sector || 'all',
         isActive: user.active
       }

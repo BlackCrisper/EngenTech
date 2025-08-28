@@ -28,7 +28,7 @@ interface User {
   username: string;
   email: string;
   fullName: string;
-  role: 'admin' | 'supervisor' | 'engineer' | 'operator' | 'viewer';
+  role: 'admin' | 'supervisor' | 'engineer' | 'operator' | 'viewer' | 'sesmt';
   sector: string;
   isActive: boolean;
   createdAt: string;
@@ -40,7 +40,7 @@ interface UserFormData {
   email: string;
   fullName: string;
   password: string;
-  role: 'admin' | 'supervisor' | 'engineer' | 'operator' | 'viewer';
+  role: 'admin' | 'supervisor' | 'engineer' | 'operator' | 'viewer' | 'sesmt';
   sector: string;
   isActive: boolean;
 }
@@ -256,6 +256,7 @@ export default function Users() {
       case 'engineer': return 'bg-purple-100 text-purple-800';
       case 'operator': return 'bg-green-100 text-green-800';
       case 'viewer': return 'bg-gray-100 text-gray-800';
+      case 'sesmt': return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -267,6 +268,7 @@ export default function Users() {
       case 'engineer': return 'Engenheiro';
       case 'operator': return 'Operador';
       case 'viewer': return 'Visualizador';
+      case 'sesmt': return 'SESMT';
       default: return 'Desconhecido';
     }
   };
@@ -562,7 +564,7 @@ export default function Users() {
               </div>
               <div>
                 <Label htmlFor="create-role">Função</Label>
-                <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value as 'admin' | 'supervisor' | 'engineer' | 'operator' | 'viewer' })}>
+                <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value as 'admin' | 'supervisor' | 'engineer' | 'operator' | 'viewer' | 'sesmt' })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -570,8 +572,11 @@ export default function Users() {
                     <SelectItem value="viewer">Visualizador</SelectItem>
                     <SelectItem value="operator">Operador</SelectItem>
                     <SelectItem value="engineer">Engenheiro</SelectItem>
+                    <SelectItem value="sesmt">SESMT</SelectItem>
                     <SelectItem value="supervisor">Supervisor</SelectItem>
-                    <SelectItem value="admin">Administrador</SelectItem>
+                    {currentUser?.role === 'admin' && (
+                      <SelectItem value="admin">Administrador</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -675,7 +680,7 @@ export default function Users() {
               </div>
               <div>
                 <Label htmlFor="edit-role">Função</Label>
-                <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value as 'admin' | 'supervisor' | 'engineer' | 'operator' | 'viewer' })}>
+                <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value as 'admin' | 'supervisor' | 'engineer' | 'operator' | 'viewer' | 'sesmt' })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -683,8 +688,11 @@ export default function Users() {
                     <SelectItem value="viewer">Visualizador</SelectItem>
                     <SelectItem value="operator">Operador</SelectItem>
                     <SelectItem value="engineer">Engenheiro</SelectItem>
+                    <SelectItem value="sesmt">SESMT</SelectItem>
                     <SelectItem value="supervisor">Supervisor</SelectItem>
-                    <SelectItem value="admin">Administrador</SelectItem>
+                    {currentUser?.role === 'admin' && (
+                      <SelectItem value="admin">Administrador</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
