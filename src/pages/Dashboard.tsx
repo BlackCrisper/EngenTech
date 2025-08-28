@@ -38,8 +38,8 @@ const Dashboard = () => {
               Carregando dados em tempo real...
             </p>
           </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-            {[...Array(5)].map((_, i) => (
+                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+             {[...Array(4)].map((_, i) => (
               <div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />
             ))}
           </div>
@@ -98,7 +98,7 @@ const Dashboard = () => {
         </div>
 
         {/* Metrics Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <MetricCard
             title="Progresso Total"
             value={`${metrics?.progressTotal || 0}%`}
@@ -111,17 +111,7 @@ const Dashboard = () => {
             }}
           />
           
-          <MetricCard
-            title="Equipamentos Pai"
-            value={metrics?.equipmentCount || 0}
-            subtitle="equipamentos principais"
-            icon={Wrench}
-            trend={{ 
-              value: metrics?.equipmentCount || 0, 
-              label: "total de pais", 
-              isPositive: true 
-            }}
-          />
+          
           
           <MetricCard
             title="Equipamentos Filhos"
@@ -187,61 +177,51 @@ const Dashboard = () => {
               </Card>
             ) : progressByArea && progressByArea.length > 0 ? (
               progressByArea.map((area, index) => (
-                <Card key={index} className="w-96 shadow-lg border-2 hover:shadow-xl transition-shadow duration-300">
-                  <CardHeader className="pb-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-t-lg">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-lg font-semibold text-foreground">{area.area}</CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1">Área de Produção</p>
-                      </div>
-                      <Badge 
-                        variant={
-                          area.areaStatus === 'completed' ? 'default' :
-                          area.areaStatus === 'overdue' ? 'destructive' : 'secondary'
-                        }
-                        className="text-xs font-medium px-3 py-1"
-                      >
-                        {area.areaStatus === 'completed' ? 'Concluído' :
-                         area.areaStatus === 'overdue' ? 'Atrasado' : 'No Prazo'}
-                      </Badge>
-                    </div>
-                  </CardHeader>
+                                 <Card key={index} className="w-96 shadow-lg border-2 hover:shadow-xl transition-shadow duration-300">
+                   <CardHeader className="pb-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-950/20 dark:to-gray-900/20 rounded-t-lg">
+                     <div className="flex justify-between items-start">
+                       <div>
+                         <CardTitle className="text-lg font-semibold text-foreground">{area.area}</CardTitle>
+                         <p className="text-sm text-muted-foreground mt-1">Área de Produção</p>
+                       </div>
+                     </div>
+                   </CardHeader>
                   <CardContent className="space-y-4 pt-6">
-                    {/* Elétrica */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-foreground">Elétrica</span>
-                        <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{area.disciplines.electrical.progress}%</span>
-                      </div>
-                      <Progress value={area.disciplines.electrical.progress} className="h-3" />
-                    </div>
+                                         {/* Elétrica */}
+                     <div className="space-y-2">
+                       <div className="flex justify-between items-center">
+                         <span className="text-sm font-medium text-foreground">Elétrica</span>
+                         <span className="text-sm font-bold text-gray-600 dark:text-gray-400">{area.disciplines.electrical.progress}%</span>
+                       </div>
+                       <Progress value={area.disciplines.electrical.progress} className="h-3" />
+                     </div>
+                     
+                     {/* Mecânica */}
+                     <div className="space-y-2">
+                       <div className="flex justify-between items-center">
+                         <span className="text-sm font-medium text-foreground">Mecânica</span>
+                         <span className="text-sm font-bold text-gray-600 dark:text-gray-400">{area.disciplines.mechanical.progress}%</span>
+                       </div>
+                       <Progress value={area.disciplines.mechanical.progress} className="h-3" />
+                     </div>
+                     
+                     {/* Civil */}
+                     <div className="space-y-2">
+                       <div className="flex justify-between items-center">
+                         <span className="text-sm font-medium text-foreground">Civil</span>
+                         <span className="text-sm font-bold text-gray-600 dark:text-gray-400">{area.disciplines.civil.progress}%</span>
+                       </div>
+                       <Progress value={area.disciplines.civil.progress} className="h-3" />
+                     </div>
                     
-                    {/* Mecânica */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-foreground">Mecânica</span>
-                        <span className="text-sm font-bold text-orange-600 dark:text-orange-400">{area.disciplines.mechanical.progress}%</span>
-                      </div>
-                      <Progress value={area.disciplines.mechanical.progress} className="h-3" />
-                    </div>
-                    
-                    {/* Civil */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-foreground">Civil</span>
-                        <span className="text-sm font-bold text-green-600 dark:text-green-400">{area.disciplines.civil.progress}%</span>
-                      </div>
-                      <Progress value={area.disciplines.civil.progress} className="h-3" />
-                    </div>
-                    
-                    {/* Progresso Total */}
-                    <div className="space-y-2 pt-4 border-t border-border/50">
-                      <div className="flex justify-between items-center">
-                        <span className="text-base font-semibold text-foreground">Progresso Total</span>
-                        <span className="text-lg font-bold text-primary">{area.totalProgress}%</span>
-                      </div>
-                      <Progress value={area.totalProgress} className="h-4" />
-                    </div>
+                                         {/* Progresso Total */}
+                     <div className="space-y-2 pt-4 border-t border-border/50">
+                       <div className="flex justify-between items-center">
+                         <span className="text-base font-semibold text-foreground">Progresso Total</span>
+                         <span className="text-lg font-bold text-gray-700 dark:text-gray-300">{area.totalProgress}%</span>
+                       </div>
+                       <Progress value={area.totalProgress} className="h-4" />
+                     </div>
                   </CardContent>
                 </Card>
               ))
