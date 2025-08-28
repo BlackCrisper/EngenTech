@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
   BarChart3, 
@@ -15,11 +15,19 @@ import {
   XCircle,
   Zap,
   Wrench,
-  Building
+  Building,
+  Search,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -55,8 +63,16 @@ const DISCIPLINE_ICONS = {
   civil: Building
 };
 
+const ITEMS_PER_PAGE = 12;
+
 export default function AdvancedReports() {
   const [activeTab, setActiveTab] = useState('overview');
+  
+  // Estados para filtros e paginação
+  const [searchTerm, setSearchTerm] = useState('');
+  const [areaFilter, setAreaFilter] = useState('');
+  const [progressFilter, setProgressFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Buscar dados dos relatórios
   const { data: progressOverview, isLoading: overviewLoading } = useQuery({
@@ -83,6 +99,62 @@ export default function AdvancedReports() {
     queryKey: ['reports-overdue-tasks'],
     queryFn: reportsService.getOverdueTasks
   });
+
+  // Filtrar e paginar dados de equipamentos
+  const filteredEquipmentData = useMemo(() => {
+    if (!equipmentData) return [];
+    
+    let filtered = equipmentData;
+    
+    // Filtro por busca
+    if (searchTerm) {
+      filtered = filtered.filter((equipment: any) =>
+        equipment.equipmentTag.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        equipment.equipmentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        equipment.areaName.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    // Filtro por área
+    if (areaFilter) {
+      filtered = filtered.filter((equipment: any) => equipment.areaName === areaFilter);
+    }
+    
+    // Filtro por progresso
+    if (progressFilter) {
+      switch (progressFilter) {
+        case 'completed':
+          filtered = filtered.filter((equipment: any) => equipment.averageProgress >= 100);
+          break;
+        case 'in-progress':
+          filtered = filtered.filter((equipment: any) => equipment.averageProgress > 0 && equipment.averageProgress < 100);
+          break;
+        case 'pending':
+          filtered = filtered.filter((equipment: any) => equipment.averageProgress === 0);
+          break;
+        case 'high-progress':
+          filtered = filtered.filter((equipment: any) => equipment.averageProgress >= 75);
+          break;
+        case 'low-progress':
+          filtered = filtered.filter((equipment: any) => equipment.averageProgress < 25);
+          break;
+      }
+    }
+    
+    return filtered;
+  }, [equipmentData, searchTerm, areaFilter, progressFilter]);
+
+  // Calcular paginação
+  const totalPages = Math.ceil(filteredEquipmentData.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedEquipmentData = filteredEquipmentData.slice(startIndex, endIndex);
+
+  // Obter áreas únicas para o filtro
+  const uniqueAreas = useMemo(() => {
+    if (!equipmentData) return [];
+    return [...new Set(equipmentData.map((equipment: any) => equipment.areaName))].sort();
+  }, [equipmentData]);
 
   const getDisciplineLabel = (discipline: string) => {
     switch (discipline) {
@@ -113,6 +185,22 @@ export default function AdvancedReports() {
     }
   };
 
+  const getProgressColor = (progress: number) => {
+    if (progress >= 100) return 'text-green-600';
+    if (progress >= 75) return 'text-blue-600';
+    if (progress >= 50) return 'text-yellow-600';
+    if (progress >= 25) return 'text-orange-600';
+    return 'text-red-600';
+  };
+
+  const getProgressBarColor = (progress: number) => {
+    if (progress >= 100) return '#10B981';
+    if (progress >= 75) return '#3B82F6';
+    if (progress >= 50) return '#F59E0B';
+    if (progress >= 25) return '#F97316';
+    return '#EF4444';
+  };
+
   const handleExportReport = (type: string) => {
     // Implementar exportação de relatórios
     console.log(`Exportando relatório: ${type}`);
@@ -140,6 +228,18 @@ export default function AdvancedReports() {
       { name: 'Em Progresso', value: progressOverview.inProgressTasks, color: '#3B82F6' },
       { name: 'Pendentes', value: progressOverview.pendingTasks, color: '#6B7280' }
     ].filter(item => item.value > 0);
+  };
+
+  // Funções de paginação
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
+
+  const resetFilters = () => {
+    setSearchTerm('');
+    setAreaFilter('');
+    setProgressFilter('');
+    setCurrentPage(1);
   };
 
   return (
@@ -502,63 +602,245 @@ export default function AdvancedReports() {
           {/* Por Equipamento */}
           <TabsContent value="equipment" className="space-y-6">
             {equipmentLoading ? (
-              <div className="space-y-4">
-                {[...Array(5)].map((_, i) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {[...Array(12)].map((_, i) => (
                   <Card key={i} className="animate-pulse">
                     <CardContent className="p-6">
-                      <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
-                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
+                      <div className="h-2 bg-gray-200 rounded w-full mb-2"></div>
+                      <div className="h-2 bg-gray-200 rounded w-2/3"></div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
             ) : equipmentData ? (
-              <div className="space-y-4">
-                {equipmentData.map((equipment: any) => (
-                  <Card key={equipment.equipmentTag}>
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h3 className="font-semibold text-lg">{equipment.equipmentTag}</h3>
-                          <p className="text-sm text-muted-foreground">{equipment.equipmentName}</p>
-                          <p className="text-xs text-muted-foreground">Área: {equipment.areaName}</p>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-blue-600">{equipment.averageProgress}%</div>
-                          <p className="text-sm text-muted-foreground">
-                            {equipment.completedTasks}/{equipment.totalTasks} tarefas
-                          </p>
-                        </div>
+              <>
+                {/* Filtros e Controles */}
+                <Card className="shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Filter className="h-5 w-5" />
+                      Filtros e Busca
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      {/* Busca */}
+                      <div className="relative">
+                        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Buscar equipamento..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-10"
+                        />
                       </div>
                       
-                      <div className="space-y-3">
-                        <div>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span>Progresso Geral</span>
-                            <span>{equipment.averageProgress}%</span>
+                      {/* Filtro por Área */}
+                      <Select value={areaFilter} onValueChange={setAreaFilter}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Todas as áreas" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Todas as áreas</SelectItem>
+                          {uniqueAreas.map((area) => (
+                            <SelectItem key={area} value={area}>{area}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      
+                      {/* Filtro por Progresso */}
+                      <Select value={progressFilter} onValueChange={setProgressFilter}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Todos os status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Todos os status</SelectItem>
+                          <SelectItem value="completed">Concluídos (100%)</SelectItem>
+                          <SelectItem value="high-progress">Alto Progresso (≥75%)</SelectItem>
+                          <SelectItem value="in-progress">Em Progresso (1-99%)</SelectItem>
+                          <SelectItem value="low-progress">Baixo Progresso (&lt;25%)</SelectItem>
+                          <SelectItem value="pending">Pendentes (0%)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      
+                      {/* Botão Reset */}
+                      <Button 
+                        variant="outline" 
+                        onClick={resetFilters}
+                        className="w-full"
+                      >
+                        Limpar Filtros
+                      </Button>
+                    </div>
+                    
+                    {/* Estatísticas dos filtros */}
+                    <div className="mt-4 pt-4 border-t">
+                      <div className="flex justify-between items-center text-sm text-muted-foreground">
+                        <span>
+                          Mostrando {paginatedEquipmentData.length} de {filteredEquipmentData.length} equipamentos
+                        </span>
+                        <span>
+                          Página {currentPage} de {totalPages}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Grid de Equipamentos */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {paginatedEquipmentData.map((equipment: any) => (
+                    <Card key={equipment.equipmentTag} className="hover:shadow-lg transition-shadow duration-200">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <CardTitle className="text-lg font-semibold truncate">
+                              {equipment.equipmentTag}
+                            </CardTitle>
+                            <p className="text-sm text-muted-foreground truncate">
+                              {equipment.equipmentName}
+                            </p>
                           </div>
-                          <Progress value={equipment.averageProgress} />
+                          <Badge variant="outline" className="ml-2 flex-shrink-0">
+                            {equipment.areaName}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      
+                      <CardContent className="space-y-4">
+                        {/* Progresso Principal */}
+                        <div className="text-center">
+                          <div className={`text-3xl font-bold ${getProgressColor(equipment.averageProgress)}`}>
+                            {equipment.averageProgress}%
+                          </div>
+                          <Progress 
+                            value={equipment.averageProgress} 
+                            className="mt-2 h-2"
+                            style={{
+                              '--progress-background': getProgressBarColor(equipment.averageProgress)
+                            } as React.CSSProperties}
+                          />
                         </div>
                         
-                        <div className="grid grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">Tarefas:</span>
-                            <div className="font-medium">{equipment.totalTasks}</div>
+                        {/* Estatísticas */}
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div className="text-center p-2 bg-gray-50 rounded">
+                            <div className="font-semibold text-blue-600">{equipment.totalTasks}</div>
+                            <div className="text-xs text-muted-foreground">Tarefas</div>
                           </div>
-                          <div>
-                            <span className="text-muted-foreground">Concluídas:</span>
-                            <div className="font-medium">{equipment.completedTasks}</div>
+                          <div className="text-center p-2 bg-gray-50 rounded">
+                            <div className="font-semibold text-green-600">{equipment.completedTasks}</div>
+                            <div className="text-xs text-muted-foreground">Concluídas</div>
                           </div>
-                          <div>
-                            <span className="text-muted-foreground">Horas:</span>
-                            <div className="font-medium">{equipment.totalActualHours}h</div>
+                        </div>
+                        
+                        {/* Horas */}
+                        <div className="text-center p-2 bg-blue-50 rounded">
+                          <div className="text-sm font-medium text-blue-800">
+                            {equipment.totalActualHours}h / {equipment.totalEstimatedHours}h
                           </div>
+                          <div className="text-xs text-blue-600">Horas Trabalhadas</div>
+                        </div>
+                        
+                        {/* Status Badge */}
+                        <div className="flex justify-center">
+                          {equipment.averageProgress >= 100 ? (
+                            <Badge className="bg-green-100 text-green-800">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Concluído
+                            </Badge>
+                          ) : equipment.averageProgress >= 75 ? (
+                            <Badge className="bg-blue-100 text-blue-800">
+                              <TrendingUp className="h-3 w-3 mr-1" />
+                              Alto Progresso
+                            </Badge>
+                          ) : equipment.averageProgress >= 25 ? (
+                            <Badge className="bg-yellow-100 text-yellow-800">
+                              <Clock className="h-3 w-3 mr-1" />
+                              Em Progresso
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-red-100 text-red-800">
+                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              Baixo Progresso
+                            </Badge>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                {/* Paginação */}
+                {totalPages > 1 && (
+                  <Card className="shadow-sm">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-muted-foreground">
+                          Mostrando {startIndex + 1} a {Math.min(endIndex, filteredEquipmentData.length)} de {filteredEquipmentData.length} equipamentos
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => goToPage(1)}
+                            disabled={currentPage === 1}
+                          >
+                            <ChevronsLeft className="h-4 w-4" />
+                          </Button>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => goToPage(currentPage - 1)}
+                            disabled={currentPage === 1}
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                          
+                                                     <div className="flex items-center gap-1">
+                             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                               const page = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+                               return (
+                                 <Button
+                                   key={`page-${page}`}
+                                   variant={currentPage === page ? "default" : "outline"}
+                                   size="sm"
+                                   onClick={() => goToPage(page)}
+                                   className="w-8 h-8"
+                                 >
+                                   {page}
+                                 </Button>
+                               );
+                             })}
+                           </div>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => goToPage(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => goToPage(totalPages)}
+                            disabled={currentPage === totalPages}
+                          >
+                            <ChevronsRight className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
-                ))}
-              </div>
+                )}
+              </>
             ) : null}
           </TabsContent>
 
