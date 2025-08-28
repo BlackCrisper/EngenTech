@@ -195,6 +195,23 @@ export default function Equipment() {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
+
+    // Validar se o TAG do filho segue o padrão do pai
+    const parentTag = formData.parentTag;
+    const childTag = formData.equipmentTag;
+    
+    // Verificar se o TAG do filho começa com o TAG do pai
+    if (!childTag.startsWith(parentTag)) {
+      toast.error(`O TAG do equipamento filho deve começar com o TAG do pai (${parentTag}). Exemplo: ${parentTag}M1`);
+      return;
+    }
+    
+    // Verificar se o TAG do filho tem pelo menos um caractere adicional após o TAG do pai
+    if (childTag.length <= parentTag.length) {
+      toast.error(`O TAG do equipamento filho deve ter pelo menos um caractere adicional após o TAG do pai. Exemplo: ${parentTag}M1`);
+      return;
+    }
+
     createMutation.mutate(formData);
   };
 
@@ -700,8 +717,38 @@ export default function Equipment() {
                   id="child-tag"
                   value={formData.equipmentTag}
                   onChange={(e) => setFormData({ ...formData, equipmentTag: e.target.value })}
-                  placeholder="EX: COMP-001-SUB"
+                  placeholder={`EX: ${selectedParentForChild?.equipmentTag}M1`}
+                  className={
+                    formData.equipmentTag && formData.parentTag && 
+                    !formData.equipmentTag.startsWith(formData.parentTag) 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : formData.equipmentTag && formData.parentTag && 
+                        formData.equipmentTag.startsWith(formData.parentTag) && 
+                        formData.equipmentTag.length > formData.parentTag.length
+                        ? 'border-green-500 focus:border-green-500'
+                        : ''
+                  }
                 />
+                {formData.equipmentTag && formData.parentTag && (
+                  <div className="mt-1 text-xs">
+                    {!formData.equipmentTag.startsWith(formData.parentTag) ? (
+                      <span className="text-red-600">
+                        ❌ O TAG deve começar com "{formData.parentTag}"
+                      </span>
+                    ) : formData.equipmentTag.length <= formData.parentTag.length ? (
+                      <span className="text-red-600">
+                        ❌ O TAG deve ter pelo menos um caractere adicional após "{formData.parentTag}"
+                      </span>
+                    ) : (
+                      <span className="text-green-600">
+                        ✅ Formato correto! Exemplo: {formData.parentTag}M1, {formData.parentTag}SUB1
+                      </span>
+                    )}
+                  </div>
+                )}
+                <div className="mt-1 text-xs text-gray-500">
+                  Exemplo: Se o pai é "{selectedParentForChild?.equipmentTag}", o filho pode ser "{selectedParentForChild?.equipmentTag}M1"
+                </div>
               </div>
               <div>
                 <Label htmlFor="child-name">Nome/Tipo *</Label>

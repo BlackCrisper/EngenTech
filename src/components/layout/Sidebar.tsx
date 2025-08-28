@@ -58,7 +58,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           {/* Logo & Close Button */}
           <div className="flex items-center justify-between p-6 border-b border-sidebar-border">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500 text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-800 text-white">
                 <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
                   <path d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/>

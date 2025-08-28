@@ -50,11 +50,11 @@ import {
   Area
 } from 'recharts';
 
-const COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
+const COLORS = ['#333333', '#666666', '#999999', '#CCCCCC', '#E5E5E5', '#F5F5F5'];
 const DISCIPLINE_COLORS = {
-  electrical: '#3B82F6',
-  mechanical: '#F59E0B', 
-  civil: '#10B981'
+  electrical: '#333333',
+  mechanical: '#666666', 
+  civil: '#999999'
 };
 
 const DISCIPLINE_ICONS = {
@@ -167,10 +167,10 @@ export default function AdvancedReports() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'critical': return 'bg-red-100 text-red-800';
-      case 'high': return 'bg-orange-100 text-orange-800';
-      case 'normal': return 'bg-blue-100 text-blue-800';
-      case 'low': return 'bg-green-100 text-green-800';
+      case 'critical': return 'bg-gray-900 text-white';
+      case 'high': return 'bg-gray-700 text-white';
+      case 'normal': return 'bg-gray-500 text-white';
+      case 'low': return 'bg-gray-300 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -186,19 +186,19 @@ export default function AdvancedReports() {
   };
 
   const getProgressColor = (progress: number) => {
-    if (progress >= 100) return 'text-green-600';
-    if (progress >= 75) return 'text-blue-600';
-    if (progress >= 50) return 'text-yellow-600';
-    if (progress >= 25) return 'text-orange-600';
-    return 'text-red-600';
+    if (progress >= 100) return 'text-gray-900';
+    if (progress >= 75) return 'text-gray-800';
+    if (progress >= 50) return 'text-gray-700';
+    if (progress >= 25) return 'text-gray-600';
+    return 'text-gray-500';
   };
 
   const getProgressBarColor = (progress: number) => {
-    if (progress >= 100) return '#10B981';
-    if (progress >= 75) return '#3B82F6';
-    if (progress >= 50) return '#F59E0B';
-    if (progress >= 25) return '#F97316';
-    return '#EF4444';
+    if (progress >= 100) return '#333333';
+    if (progress >= 75) return '#666666';
+    if (progress >= 50) return '#999999';
+    if (progress >= 25) return '#CCCCCC';
+    return '#E5E5E5';
   };
 
   const handleExportReport = (type: string) => {
@@ -213,9 +213,9 @@ export default function AdvancedReports() {
     const pending = discipline.pendingTasks || 0;
     
     return [
-      { name: 'Concluídas', value: completed, color: '#10B981' },
-      { name: 'Em Progresso', value: inProgress, color: '#3B82F6' },
-      { name: 'Pendentes', value: pending, color: '#6B7280' }
+      { name: 'Concluídas', value: completed, color: '#333333' },
+      { name: 'Em Progresso', value: inProgress, color: '#666666' },
+      { name: 'Pendentes', value: pending, color: '#999999' }
     ].filter(item => item.value > 0);
   };
 
@@ -224,9 +224,9 @@ export default function AdvancedReports() {
     if (!progressOverview) return [];
     
     return [
-      { name: 'Concluídas', value: progressOverview.completedTasks, color: '#10B981' },
-      { name: 'Em Progresso', value: progressOverview.inProgressTasks, color: '#3B82F6' },
-      { name: 'Pendentes', value: progressOverview.pendingTasks, color: '#6B7280' }
+      { name: 'Concluídas', value: progressOverview.completedTasks, color: '#333333' },
+      { name: 'Em Progresso', value: progressOverview.inProgressTasks, color: '#666666' },
+      { name: 'Pendentes', value: progressOverview.pendingTasks, color: '#999999' }
     ].filter(item => item.value > 0);
   };
 
@@ -291,66 +291,66 @@ export default function AdvancedReports() {
               </div>
             ) : progressOverview ? (
               <>
-                {/* Cards de métricas */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <Card className="border-l-4 border-l-blue-500">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Total de Tarefas</CardTitle>
-                      <Target className="h-4 w-4 text-blue-500" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{progressOverview.totalTasks}</div>
-                      <p className="text-xs text-muted-foreground">
-                        {progressOverview.completionRate}% concluídas
-                      </p>
-                    </CardContent>
-                  </Card>
+                                 {/* Cards de métricas */}
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                   <Card className="border-l-4 border-l-gray-600 bg-gradient-to-r from-gray-50 to-white">
+                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                       <CardTitle className="text-sm font-medium">Total de Tarefas</CardTitle>
+                       <Target className="h-4 w-4 text-gray-600" />
+                     </CardHeader>
+                     <CardContent>
+                       <div className="text-2xl font-bold text-gray-700">{progressOverview.totalTasks}</div>
+                       <p className="text-xs text-muted-foreground">
+                         {progressOverview.completionRate}% concluídas
+                       </p>
+                     </CardContent>
+                   </Card>
 
-                  <Card className="border-l-4 border-l-green-500">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Tarefas Concluídas</CardTitle>
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-green-600">{progressOverview.completedTasks}</div>
-                      <p className="text-xs text-muted-foreground">
-                        {progressOverview.inProgressTasks} em progresso
-                      </p>
-                    </CardContent>
-                  </Card>
+                   <Card className="border-l-4 border-l-gray-700 bg-gradient-to-r from-gray-50 to-white">
+                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                       <CardTitle className="text-sm font-medium">Tarefas Concluídas</CardTitle>
+                       <CheckCircle className="h-4 w-4 text-gray-700" />
+                     </CardHeader>
+                     <CardContent>
+                       <div className="text-2xl font-bold text-gray-800">{progressOverview.completedTasks}</div>
+                       <p className="text-xs text-muted-foreground">
+                         {progressOverview.inProgressTasks} em progresso
+                       </p>
+                     </CardContent>
+                   </Card>
 
-                  <Card className="border-l-4 border-l-orange-500">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Progresso Médio</CardTitle>
-                      <TrendingUp className="h-4 w-4 text-orange-600" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-orange-600">{progressOverview.averageProgress}%</div>
-                      <Progress value={progressOverview.averageProgress} className="mt-2" />
-                    </CardContent>
-                  </Card>
+                   <Card className="border-l-4 border-l-gray-800 bg-gradient-to-r from-gray-50 to-white">
+                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                       <CardTitle className="text-sm font-medium">Progresso Médio</CardTitle>
+                       <TrendingUp className="h-4 w-4 text-gray-800" />
+                     </CardHeader>
+                     <CardContent>
+                       <div className="text-2xl font-bold text-gray-900">{progressOverview.averageProgress}%</div>
+                       <Progress value={progressOverview.averageProgress} className="mt-2" />
+                     </CardContent>
+                   </Card>
 
-                  <Card className="border-l-4 border-l-purple-500">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Horas Trabalhadas</CardTitle>
-                      <Clock className="h-4 w-4 text-purple-600" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-purple-600">{progressOverview.totalActualHours}h</div>
-                      <p className="text-xs text-muted-foreground">
-                        de {progressOverview.totalEstimatedHours}h estimadas
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
+                   <Card className="border-l-4 border-l-gray-900 bg-gradient-to-r from-gray-50 to-white">
+                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                       <CardTitle className="text-sm font-medium">Horas Trabalhadas</CardTitle>
+                       <Clock className="h-4 w-4 text-gray-900" />
+                     </CardHeader>
+                     <CardContent>
+                       <div className="text-2xl font-bold text-gray-900">{progressOverview.totalActualHours}h</div>
+                       <p className="text-xs text-muted-foreground">
+                         de {progressOverview.totalEstimatedHours}h estimadas
+                       </p>
+                     </CardContent>
+                   </Card>
+                 </div>
 
                 {/* Gráfico geral de status das tarefas */}
                 <Card className="shadow-lg">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <PieChart className="h-5 w-5 text-blue-600" />
-                      Status Geral das Tarefas
-                    </CardTitle>
+                                         <CardTitle className="flex items-center gap-2">
+                       <PieChart className="h-5 w-5 text-gray-700" />
+                       Status Geral das Tarefas
+                     </CardTitle>
                     <p className="text-sm text-muted-foreground">
                       Distribuição geral do status de todas as tarefas do projeto
                     </p>
@@ -391,39 +391,39 @@ export default function AdvancedReports() {
                           <h4 className="font-semibold text-foreground mb-3">Resumo do Status</h4>
                         </div>
                         
-                        {prepareOverallStatusData().map((item, index) => (
-                          <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <div className="flex items-center gap-3">
-                              <div 
-                                className="w-4 h-4 rounded-full" 
-                                style={{ backgroundColor: item.color }}
-                              />
-                              <span className="font-medium">{item.name}</span>
-                            </div>
-                            <div className="text-right">
-                              <div className="font-bold text-lg">{item.value}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {((item.value / progressOverview.totalTasks) * 100).toFixed(1)}%
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+                                                {prepareOverallStatusData().map((item, index) => (
+                           <div key={index} className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-white rounded-lg border border-gray-200 shadow-sm">
+                             <div className="flex items-center gap-3">
+                               <div 
+                                 className="w-4 h-4 rounded-full" 
+                                 style={{ backgroundColor: item.color }}
+                               />
+                               <span className="font-medium">{item.name}</span>
+                             </div>
+                             <div className="text-right">
+                               <div className="font-bold text-lg">{item.value}</div>
+                               <div className="text-xs text-muted-foreground">
+                                 {((item.value / progressOverview.totalTasks) * 100).toFixed(1)}%
+                               </div>
+                             </div>
+                           </div>
+                         ))}
                         
-                        <div className="pt-4 border-t">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Taxa de Conclusão:</span>
-                            <span className="font-semibold">{progressOverview.completionRate}%</span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Eficiência:</span>
-                            <span className="font-semibold">
-                              {progressOverview.totalEstimatedHours > 0 
-                                ? ((progressOverview.totalActualHours / progressOverview.totalEstimatedHours) * 100).toFixed(1)
-                                : 0
-                              }%
-                            </span>
-                          </div>
-                        </div>
+                                                 <div className="pt-4 border-t">
+                           <div className="flex justify-between text-sm p-2 bg-gray-50 rounded border border-gray-200">
+                             <span className="text-muted-foreground">Taxa de Conclusão:</span>
+                             <span className="font-semibold text-gray-700">{progressOverview.completionRate}%</span>
+                           </div>
+                           <div className="flex justify-between text-sm p-2 bg-gray-100 rounded border border-gray-300 mt-2">
+                             <span className="text-muted-foreground">Eficiência:</span>
+                             <span className="font-semibold text-gray-800">
+                               {progressOverview.totalEstimatedHours > 0 
+                                 ? ((progressOverview.totalActualHours / progressOverview.totalEstimatedHours) * 100).toFixed(1)
+                                 : 0
+                               }%
+                             </span>
+                           </div>
+                         </div>
                       </div>
                     </div>
                   </CardContent>
@@ -439,22 +439,44 @@ export default function AdvancedReports() {
                       </p>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      {disciplineData.map((discipline: any) => {
-                        const IconComponent = DISCIPLINE_ICONS[discipline.discipline as keyof typeof DISCIPLINE_ICONS];
-                        const pieData = prepareDisciplinePieData(discipline);
-                        
-                        return (
-                          <Card key={discipline.discipline} className="shadow-lg hover:shadow-xl transition-shadow">
+                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                       {disciplineData.map((discipline: any) => {
+                         const IconComponent = DISCIPLINE_ICONS[discipline.discipline as keyof typeof DISCIPLINE_ICONS];
+                         const pieData = prepareDisciplinePieData(discipline);
+                         
+                         // Definir cores específicas para cada disciplina
+                         const getDisciplineCardStyle = (disciplineType: string) => {
+                           switch (disciplineType) {
+                             case 'electrical':
+                               return 'border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50 to-white';
+                             case 'mechanical':
+                               return 'border-l-4 border-l-green-500 bg-gradient-to-br from-green-50 to-white';
+                             case 'civil':
+                               return 'border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-50 to-white';
+                             default:
+                               return 'border-l-4 border-l-gray-500 bg-gradient-to-br from-gray-50 to-white';
+                           }
+                         };
+                         
+                         return (
+                           <Card key={discipline.discipline} className={`shadow-lg hover:shadow-xl transition-shadow ${getDisciplineCardStyle(discipline.discipline)}`}>
                             <CardHeader className="pb-4">
-                              <CardTitle className="flex items-center gap-2 text-lg">
-                                <IconComponent className="h-5 w-5" style={{ color: DISCIPLINE_COLORS[discipline.discipline as keyof typeof DISCIPLINE_COLORS] }} />
-                                {getDisciplineLabel(discipline.discipline)}
-                              </CardTitle>
-                              <div className="flex justify-between items-center">
-                                <span className="text-2xl font-bold" style={{ color: DISCIPLINE_COLORS[discipline.discipline as keyof typeof DISCIPLINE_COLORS] }}>
-                                  {discipline.averageProgress}%
-                                </span>
+                                                             <CardTitle className="flex items-center gap-2 text-lg">
+                                 <IconComponent className="h-5 w-5" style={{ 
+                                   color: discipline.discipline === 'electrical' ? '#333333' : 
+                                          discipline.discipline === 'mechanical' ? '#333333' : 
+                                          discipline.discipline === 'civil' ? '#333333' : '#333333'
+                                 }} />
+                                 {getDisciplineLabel(discipline.discipline)}
+                               </CardTitle>
+                               <div className="flex justify-between items-center">
+                                 <span className="text-2xl font-bold" style={{ 
+                                   color: discipline.discipline === 'electrical' ? '#333333' : 
+                                          discipline.discipline === 'mechanical' ? '#333333 ' : 
+                                          discipline.discipline === 'civil' ? '#333333' : '#333333'
+                                 }}>
+                                   {discipline.averageProgress}%
+                                 </span>
                                 <Badge variant="outline">
                                   {discipline.totalTasks} tarefas
                                 </Badge>
@@ -489,30 +511,30 @@ export default function AdvancedReports() {
                                 </ResponsiveContainer>
                               </div>
                               
-                              {/* Estatísticas detalhadas */}
+                                                            {/* Estatísticas detalhadas */}
                               <div className="space-y-2">
-                                <div className="flex justify-between text-sm">
-                                  <span className="text-muted-foreground">Concluídas:</span>
-                                  <span className="font-medium text-green-600">{discipline.completedTasks}</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                  <span className="text-muted-foreground">Em Progresso:</span>
-                                  <span className="font-medium text-blue-600">
-                                    {discipline.totalTasks - discipline.completedTasks - (discipline.pendingTasks || 0)}
-                                  </span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                  <span className="text-muted-foreground">Pendentes:</span>
-                                  <span className="font-medium text-gray-600">{discipline.pendingTasks || 0}</span>
-                                </div>
-                                <div className="pt-2 border-t">
-                                  <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">Horas:</span>
-                                    <span className="font-medium">
-                                      {discipline.totalActualHours}h / {discipline.totalEstimatedHours}h
-                                    </span>
-                                  </div>
-                                </div>
+                                 <div className="flex justify-between text-sm p-2 bg-gray-50 rounded border border-gray-200">
+                                   <span className="text-muted-foreground">Concluídas:</span>
+                                   <span className="font-medium text-gray-700">{discipline.completedTasks}</span>
+                                 </div>
+                                 <div className="flex justify-between text-sm p-2 bg-gray-100 rounded border border-gray-300">
+                                   <span className="text-muted-foreground">Em Progresso:</span>
+                                   <span className="font-medium text-gray-800">
+                                     {discipline.totalTasks - discipline.completedTasks - (discipline.pendingTasks || 0)}
+                                   </span>
+                                 </div>
+                                 <div className="flex justify-between text-sm p-2 bg-gray-50 rounded border border-gray-200">
+                                   <span className="text-muted-foreground">Pendentes:</span>
+                                   <span className="font-medium text-gray-700">{discipline.pendingTasks || 0}</span>
+                                 </div>
+                                 <div className="pt-2 border-t">
+                                   <div className="flex justify-between text-sm p-2 bg-gray-100 rounded border border-gray-300">
+                                     <span className="text-muted-foreground">Horas:</span>
+                                     <span className="font-medium text-gray-800">
+                                       {discipline.totalActualHours}h / {discipline.totalEstimatedHours}h
+                                     </span>
+                                   </div>
+                                 </div>
                               </div>
                             </CardContent>
                           </Card>
@@ -552,8 +574,8 @@ export default function AdvancedReports() {
                         <YAxis />
                         <Tooltip />
                         <Legend />
-                        <Bar dataKey="averageProgress" fill="#3B82F6" name="Progresso Médio (%)" />
-                        <Bar dataKey="completionRate" fill="#10B981" name="Taxa de Conclusão (%)" />
+                                                                         <Bar dataKey="averageProgress" fill="#666666" name="Progresso Médio (%)" />
+                        <Bar dataKey="completionRate" fill="#333333" name="Taxa de Conclusão (%)" />
                       </BarChart>
                     </ResponsiveContainer>
                   </CardContent>
@@ -575,22 +597,22 @@ export default function AdvancedReports() {
                         </div>
                         
                         <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">Tarefas:</span>
-                            <div className="font-medium">{discipline.totalTasks}</div>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Concluídas:</span>
-                            <div className="font-medium">{discipline.completedTasks}</div>
-                          </div>
+                                                     <div>
+                             <span className="text-muted-foreground">Tarefas:</span>
+                             <div className="font-medium text-gray-800">{discipline.totalTasks}</div>
+                           </div>
+                           <div>
+                             <span className="text-muted-foreground">Concluídas:</span>
+                             <div className="font-medium text-gray-800">{discipline.completedTasks}</div>
+                           </div>
                         </div>
                         
-                        <div className="text-sm">
-                          <span className="text-muted-foreground">Horas:</span>
-                          <div className="font-medium">
-                            {discipline.totalActualHours}h / {discipline.totalEstimatedHours}h
-                          </div>
-                        </div>
+                                                 <div className="text-sm p-2 bg-gray-50 rounded border border-gray-200">
+                           <span className="text-muted-foreground">Horas:</span>
+                           <div className="font-medium text-gray-700">
+                             {discipline.totalActualHours}h / {discipline.totalEstimatedHours}h
+                           </div>
+                         </div>
                       </CardContent>
                     </Card>
                   ))}
@@ -644,7 +666,7 @@ export default function AdvancedReports() {
                          </SelectTrigger>
                          <SelectContent>
                            <SelectItem value="all">Todas as áreas</SelectItem>
-                           {uniqueAreas.map((area) => (
+                           {uniqueAreas.map((area: string) => (
                              <SelectItem key={area} value={area}>{area}</SelectItem>
                            ))}
                          </SelectContent>
@@ -724,50 +746,50 @@ export default function AdvancedReports() {
                           />
                         </div>
                         
-                        {/* Estatísticas */}
-                        <div className="grid grid-cols-2 gap-3 text-sm">
-                          <div className="text-center p-2 bg-gray-50 rounded">
-                            <div className="font-semibold text-blue-600">{equipment.totalTasks}</div>
-                            <div className="text-xs text-muted-foreground">Tarefas</div>
-                          </div>
-                          <div className="text-center p-2 bg-gray-50 rounded">
-                            <div className="font-semibold text-green-600">{equipment.completedTasks}</div>
-                            <div className="text-xs text-muted-foreground">Concluídas</div>
-                          </div>
-                        </div>
+                                                 {/* Estatísticas */}
+                         <div className="grid grid-cols-2 gap-3 text-sm">
+                           <div className="text-center p-2 bg-gray-50 rounded border border-gray-200">
+                             <div className="font-semibold text-gray-700">{equipment.totalTasks}</div>
+                             <div className="text-xs text-muted-foreground">Tarefas</div>
+                           </div>
+                           <div className="text-center p-2 bg-gray-100 rounded border border-gray-300">
+                             <div className="font-semibold text-gray-800">{equipment.completedTasks}</div>
+                             <div className="text-xs text-muted-foreground">Concluídas</div>
+                           </div>
+                         </div>
+                         
+                         {/* Horas */}
+                         <div className="text-center p-2 bg-gray-50 rounded border border-gray-200">
+                           <div className="text-sm font-medium text-gray-700">
+                             {equipment.totalActualHours}h / {equipment.totalEstimatedHours}h
+                           </div>
+                           <div className="text-xs text-gray-600">Horas Trabalhadas</div>
+                         </div>
                         
-                        {/* Horas */}
-                        <div className="text-center p-2 bg-blue-50 rounded">
-                          <div className="text-sm font-medium text-blue-800">
-                            {equipment.totalActualHours}h / {equipment.totalEstimatedHours}h
-                          </div>
-                          <div className="text-xs text-blue-600">Horas Trabalhadas</div>
-                        </div>
-                        
-                        {/* Status Badge */}
-                        <div className="flex justify-center">
-                          {equipment.averageProgress >= 100 ? (
-                            <Badge className="bg-green-100 text-green-800">
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              Concluído
-                            </Badge>
-                          ) : equipment.averageProgress >= 75 ? (
-                            <Badge className="bg-blue-100 text-blue-800">
-                              <TrendingUp className="h-3 w-3 mr-1" />
-                              Alto Progresso
-                            </Badge>
-                          ) : equipment.averageProgress >= 25 ? (
-                            <Badge className="bg-yellow-100 text-yellow-800">
-                              <Clock className="h-3 w-3 mr-1" />
-                              Em Progresso
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-red-100 text-red-800">
-                              <AlertTriangle className="h-3 w-3 mr-1" />
-                              Baixo Progresso
-                            </Badge>
-                          )}
-                        </div>
+                                                 {/* Status Badge */}
+                         <div className="flex justify-center">
+                           {equipment.averageProgress >= 100 ? (
+                             <Badge className="bg-green-100 text-green-800 border-green-200">
+                               <CheckCircle className="h-3 w-3 mr-1" />
+                               Concluído
+                             </Badge>
+                           ) : equipment.averageProgress >= 75 ? (
+                             <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                               <TrendingUp className="h-3 w-3 mr-1" />
+                               Alto Progresso
+                             </Badge>
+                           ) : equipment.averageProgress >= 25 ? (
+                             <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
+                               <Clock className="h-3 w-3 mr-1" />
+                               Em Progresso
+                             </Badge>
+                           ) : (
+                             <Badge className="bg-red-100 text-red-800 border-red-200">
+                               <AlertTriangle className="h-3 w-3 mr-1" />
+                               Baixo Progresso
+                             </Badge>
+                           )}
+                         </div>
                       </CardContent>
                     </Card>
                   ))}
@@ -867,29 +889,29 @@ export default function AdvancedReports() {
                           <h3 className="font-semibold text-lg">{user.userName}</h3>
                           <Badge variant="outline">{user.role}</Badge>
                         </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-green-600">{user.totalUpdates}</div>
-                          <p className="text-sm text-muted-foreground">atualizações</p>
-                        </div>
+                                                 <div className="text-right">
+                           <div className="text-2xl font-bold text-gray-800">{user.totalUpdates}</div>
+                           <p className="text-sm text-muted-foreground">atualizações</p>
+                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">Tarefas Atualizadas:</span>
-                          <div className="font-medium">{user.tasksUpdated}</div>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Progresso Adicionado:</span>
-                          <div className="font-medium">{user.totalProgressAdded}%</div>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Média por Update:</span>
-                          <div className="font-medium">{user.averageProgressPerUpdate}%</div>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Updates com Fotos:</span>
-                          <div className="font-medium">{user.updatesWithPhotos}</div>
-                        </div>
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                         <div className="p-2 bg-gray-50 rounded border border-gray-200">
+                           <span className="text-muted-foreground">Tarefas Atualizadas:</span>
+                           <div className="font-medium text-gray-700">{user.tasksUpdated}</div>
+                         </div>
+                         <div className="p-2 bg-gray-100 rounded border border-gray-300">
+                           <span className="text-muted-foreground">Progresso Adicionado:</span>
+                           <div className="font-medium text-gray-800">{user.totalProgressAdded}%</div>
+                         </div>
+                         <div className="p-2 bg-gray-50 rounded border border-gray-200">
+                           <span className="text-muted-foreground">Média por Update:</span>
+                           <div className="font-medium text-gray-700">{user.averageProgressPerUpdate}%</div>
+                         </div>
+                         <div className="p-2 bg-gray-100 rounded border border-gray-300">
+                           <span className="text-muted-foreground">Updates com Fotos:</span>
+                           <div className="font-medium text-gray-800">{user.updatesWithPhotos}</div>
+                         </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -915,21 +937,21 @@ export default function AdvancedReports() {
               <>
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <AlertTriangle className="h-5 w-5 text-red-600" />
-                      Tarefas Vencidas ({overdueTasks.length})
-                    </CardTitle>
+                                         <CardTitle className="flex items-center gap-2">
+                       <AlertTriangle className="h-5 w-5 text-gray-800" />
+                       Tarefas Vencidas ({overdueTasks.length})
+                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     {overdueTasks.length === 0 ? (
                       <div className="text-center py-8">
-                        <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
+                                                 <CheckCircle className="h-12 w-12 text-gray-800 mx-auto mb-4" />
                         <p className="text-muted-foreground">Nenhuma tarefa vencida!</p>
                       </div>
                     ) : (
                       <div className="space-y-4">
                         {overdueTasks.map((task: any) => (
-                          <Card key={task.id} className="border-red-200">
+                                                     <Card key={task.id} className="border-gray-300">
                             <CardContent className="p-4">
                               <div className="flex items-center justify-between mb-2">
                                 <div>
@@ -938,33 +960,33 @@ export default function AdvancedReports() {
                                     {task.equipmentTag} - {task.equipmentName}
                                   </p>
                                 </div>
-                                <div className="text-right">
-                                  <Badge className="bg-red-100 text-red-800">
-                                    {task.daysOverdue} dias vencida
-                                  </Badge>
-                                  <Badge className={getPriorityColor(task.priority)}>
-                                    {getPriorityLabel(task.priority)}
-                                  </Badge>
-                                </div>
+                                                                 <div className="text-right">
+                                   <Badge className="bg-gray-900 text-white">
+                                     {task.daysOverdue} dias vencida
+                                   </Badge>
+                                   <Badge className={getPriorityColor(task.priority)}>
+                                     {getPriorityLabel(task.priority)}
+                                   </Badge>
+                                 </div>
                               </div>
                               
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                                <div>
-                                  <span className="text-muted-foreground">Disciplina:</span>
-                                  <div className="font-medium">{getDisciplineLabel(task.discipline)}</div>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">Progresso:</span>
-                                  <div className="font-medium">{task.currentProgress}%</div>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">Vencimento:</span>
-                                  <div className="font-medium">{new Date(task.dueDate).toLocaleDateString()}</div>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">Área:</span>
-                                  <div className="font-medium">{task.areaName}</div>
-                                </div>
+                                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                 <div className="p-2 bg-gray-50 rounded border border-gray-200">
+                                   <span className="text-muted-foreground">Disciplina:</span>
+                                   <div className="font-medium text-gray-700">{getDisciplineLabel(task.discipline)}</div>
+                                 </div>
+                                 <div className="p-2 bg-gray-100 rounded border border-gray-300">
+                                   <span className="text-muted-foreground">Progresso:</span>
+                                   <div className="font-medium text-gray-800">{task.currentProgress}%</div>
+                                 </div>
+                                 <div className="p-2 bg-gray-50 rounded border border-gray-200">
+                                   <span className="text-muted-foreground">Vencimento:</span>
+                                   <div className="font-medium text-gray-700">{new Date(task.dueDate).toLocaleDateString()}</div>
+                                 </div>
+                                 <div className="p-2 bg-gray-100 rounded border border-gray-300">
+                                   <span className="text-muted-foreground">Área:</span>
+                                   <div className="font-medium text-gray-800">{task.areaName}</div>
+                                 </div>
                               </div>
                             </CardContent>
                           </Card>

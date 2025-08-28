@@ -66,7 +66,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
             
             <div className="hidden lg:block">
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-8 h-8 bg-orange-500 rounded-lg">
+                <div className="flex items-center justify-center w-8 h-8 bg-gray-800 rounded-lg">
                   <svg className="h-4 w-4 text-white" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
                     <path d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/>
@@ -86,9 +86,9 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
           </div>
 
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" className="relative">
+            <Button variant="ghost" size="sm" className="relative text-gray-700 hover:text-gray-900 hover:bg-gray-100">
               <Bell className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 h-4 w-4 bg-primary rounded-full text-xs text-primary-foreground flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 h-4 w-4 bg-gray-800 text-white rounded-full text-xs flex items-center justify-center">
                 3
               </span>
             </Button>
@@ -98,7 +98,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src="/avatars/01.png" alt={user?.fullName || 'Usuário'} />
-                    <AvatarFallback className="bg-primary text-primary-foreground">
+                    <AvatarFallback className="bg-gray-700 text-white">
                       {user?.fullName ? getInitials(user.fullName) : <User className="h-4 w-4" />}
                     </AvatarFallback>
                   </Avatar>

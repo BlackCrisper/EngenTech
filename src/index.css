@@ -2,111 +2,113 @@
 @tailwind components;
 @tailwind utilities;
 
-/* EnginSync Industrial Design System - Paleta laranja profissional para ambiente industrial */
+/* EnginSync Monochromatic Design System - Paleta monocromática profissional */
 
 @layer base {
   :root {
-    /* Industrial Orange Palette - Inspirado em Mizu Cimentos */
-    --background: 210 11% 96%;
-    --foreground: 210 22% 15%;
+    /* Monochromatic Palette - Preto, Branco e Cinza */
+    --background: 0 0% 100%;  /* Branco puro */
+    --foreground: 0 0% 9%;    /* Preto quase puro */
 
-    --card: 0 0% 100%;
-    --card-foreground: 210 22% 15%;
+    --card: 0 0% 100%;        /* Branco puro */
+    --card-foreground: 0 0% 9%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 210 22% 15%;
+    --popover: 0 0% 100%;     /* Branco puro */
+    --popover-foreground: 0 0% 9%;
 
-    /* Primary Orange - Cor principal industrial */
-    --primary: 18 100% 60%;  /* #FF6B35 */
-    --primary-foreground: 0 0% 100%;
-    --primary-muted: 18 85% 92%;
-    --primary-dark: 14 100% 45%;  /* #E55100 */
+    /* Primary - Cinza escuro como cor principal */
+    --primary: 0 0% 20%;      /* Cinza escuro */
+    --primary-foreground: 0 0% 100%;  /* Branco */
+    --primary-muted: 0 0% 95%;        /* Cinza muito claro */
+    --primary-dark: 0 0% 9%;          /* Preto quase puro */
 
-    /* Industrial Gray Scale */
-    --secondary: 210 11% 71%;
-    --secondary-foreground: 210 22% 15%;
+    /* Monochromatic Gray Scale */
+    --secondary: 0 0% 96%;    /* Cinza muito claro */
+    --secondary-foreground: 0 0% 20%;
 
-    --muted: 210 11% 96%;
-    --muted-foreground: 210 10% 45%;
+    --muted: 0 0% 98%;        /* Cinza quase branco */
+    --muted-foreground: 0 0% 45%;     /* Cinza médio */
 
-    --accent: 18 100% 95%;
-    --accent-foreground: 14 100% 45%;
+    --accent: 0 0% 96%;       /* Cinza muito claro */
+    --accent-foreground: 0 0% 20%;
 
-    /* System Colors */
-    --destructive: 0 84% 60%;
+    /* System Colors - Minimal Orange Usage */
+    --destructive: 0 0% 20%;  /* Cinza escuro */
     --destructive-foreground: 0 0% 100%;
     
-    --success: 142 76% 36%;
+    --success: 0 0% 20%;      /* Cinza escuro */
     --success-foreground: 0 0% 100%;
     
-    --warning: 45 93% 47%;
+    --warning: 25 95% 53%;    /* Laranja apenas para alertas críticos */
     --warning-foreground: 0 0% 100%;
 
     /* Interface Elements */
-    --border: 210 12% 88%;
-    --input: 210 12% 88%;
-    --ring: 18 100% 60%;
+    --border: 0 0% 90%;       /* Cinza claro */
+    --input: 0 0% 90%;        /* Cinza claro */
+    --ring: 0 0% 20%;         /* Cinza escuro */
 
     --radius: 0.5rem;
 
-    /* Industrial Gradients */
-    --gradient-orange: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-dark)));
-    --gradient-industrial: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted)));
+    /* Monochromatic Gradients */
+    --gradient-monochrome: linear-gradient(135deg, hsl(0 0% 20%), hsl(0 0% 9%));
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(0 0% 98%));
     
-    /* Shadows with orange glow */
-    --shadow-glow: 0 10px 30px -10px hsl(var(--primary) / 0.3);
-    --shadow-card: 0 4px 6px -1px hsl(210 22% 15% / 0.1);
+    /* Shadows - Sem cores */
+    --shadow-glow: 0 10px 30px -10px hsl(0 0% 0% / 0.1);
+    --shadow-card: 0 4px 6px -1px hsl(0 0% 0% / 0.05);
     
     /* Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-    --sidebar-background: 210 22% 15%;
-    --sidebar-foreground: 210 11% 96%;
-    --sidebar-primary: 18 100% 60%;
+    /* Sidebar - Monochromatic */
+    --sidebar-background: 0 0% 9%;    /* Preto quase puro */
+    --sidebar-foreground: 0 0% 100%;  /* Branco */
+    --sidebar-primary: 25 95% 53%;    /* Laranja apenas para elementos ativos */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 20% 20%;
-    --sidebar-accent-foreground: 210 11% 96%;
-    --sidebar-border: 210 20% 25%;
+    --sidebar-accent: 0 0% 15%;       /* Cinza muito escuro */
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 20%;       /* Cinza escuro */
+    --sidebar-ring: 25 95% 53%;       /* Laranja apenas para focus */
   }
 
   .dark {
-    /* Dark Mode - Industrial Night Theme */
-    --background: 210 22% 15%;
-    --foreground: 210 11% 96%;
+    /* Dark Mode - Inverted Monochromatic */
+    --background: 0 0% 9%;            /* Preto quase puro */
+    --foreground: 0 0% 100%;          /* Branco */
 
-    --card: 210 20% 18%;
-    --card-foreground: 210 11% 96%;
+    --card: 0 0% 15%;                 /* Cinza muito escuro */
+    --card-foreground: 0 0% 100%;
 
-    --popover: 210 20% 18%;
-    --popover-foreground: 210 11% 96%;
+    --popover: 0 0% 15%;              /* Cinza muito escuro */
+    --popover-foreground: 0 0% 100%;
 
-    --primary: 18 100% 60%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;             /* Branco */
+    --primary-foreground: 0 0% 9%;
 
-    --secondary: 210 20% 25%;
-    --secondary-foreground: 210 11% 96%;
+    --secondary: 0 0% 20%;            /* Cinza escuro */
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 20% 20%;
-    --muted-foreground: 210 8% 65%;
+    --muted: 0 0% 20%;                /* Cinza escuro */
+    --muted-foreground: 0 0% 65%;     /* Cinza médio */
 
-    --accent: 18 100% 95%;
-    --accent-foreground: 14 100% 45%;
+    --accent: 0 0% 25%;               /* Cinza médio-escuro */
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 0% 100%;         /* Branco */
+    --destructive-foreground: 0 0% 9%;
 
-    --border: 210 20% 25%;
-    --input: 210 20% 25%;
-    --ring: 18 100% 60%;
+    --border: 0 0% 25%;               /* Cinza médio-escuro */
+    --input: 0 0% 25%;                /* Cinza médio-escuro */
+    --ring: 25 95% 53%;               /* Laranja apenas para focus */
 
-    --sidebar-background: 210 22% 15%;
-    --sidebar-foreground: 210 11% 96%;
-    --sidebar-primary: 18 100% 60%;
+    --sidebar-background: 0 0% 9%;    /* Preto quase puro */
+    --sidebar-foreground: 0 0% 100%;  /* Branco */
+    --sidebar-primary: 25 95% 53%;    /* Laranja apenas para elementos ativos */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 20% 20%;
-    --sidebar-accent-foreground: 210 11% 96%;
-    --sidebar-border: 210 20% 25%;
-    --sidebar-ring: 18 100% 60%;
+    --sidebar-accent: 0 0% 15%;       /* Cinza muito escuro */
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 20%;       /* Cinza escuro */
+    --sidebar-ring: 25 95% 53%;       /* Laranja apenas para focus */
   }
 }
 
@@ -119,9 +121,13 @@
     @apply bg-background text-foreground font-medium;
   }
 
-  /* Industrial UI Enhancements */
-  .gradient-orange {
-    background: var(--gradient-orange);
+  /* Monochromatic UI Enhancements */
+  .gradient-monochrome {
+    background: var(--gradient-monochrome);
+  }
+  
+  .gradient-subtle {
+    background: var(--gradient-subtle);
   }
   
   .shadow-glow {
@@ -130,5 +136,18 @@
   
   .transition-smooth {
     transition: var(--transition-smooth);
+  }
+
+  /* Minimal Orange Accents - Use sparingly */
+  .accent-orange {
+    color: hsl(25 95% 53%);
+  }
+  
+  .bg-accent-orange {
+    background-color: hsl(25 95% 53%);
+  }
+  
+  .border-accent-orange {
+    border-color: hsl(25 95% 53%);
   }
 }

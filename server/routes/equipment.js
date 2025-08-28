@@ -297,12 +297,12 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Área não encontrada' });
     }
 
-    // Se for equipamento filho, verificar se o pai existe
+    // Se for equipamento filho, verificar se o pai existe e validar o padrão do TAG
     let hierarchyLevel = 0;
     if (!isParent && parentTag) {
       const parentExists = await pool.request()
         .input('parentTag', sql.NVarChar, parentTag)
-        .query('SELECT id, isParent FROM Equipment WHERE tag = @parentTag');
+        .query('SELECT id, isParent, tag FROM Equipment WHERE tag = @parentTag');
 
       if (parentExists.recordset.length === 0) {
         return res.status(400).json({ error: 'Equipamento pai não encontrado' });
@@ -311,6 +311,20 @@ router.post('/', async (req, res) => {
       const parent = parentExists.recordset[0];
       if (!parent.isParent) {
         return res.status(400).json({ error: 'O equipamento pai deve ser marcado como pai' });
+      }
+
+      // Validar se o TAG do filho segue o padrão do pai
+      if (!equipmentTag.startsWith(parentTag)) {
+        return res.status(400).json({ 
+          error: `O TAG do equipamento filho deve começar com o TAG do pai (${parentTag}). Exemplo: ${parentTag}M1` 
+        });
+      }
+
+      // Verificar se o TAG do filho tem pelo menos um caractere adicional após o TAG do pai
+      if (equipmentTag.length <= parentTag.length) {
+        return res.status(400).json({ 
+          error: `O TAG do equipamento filho deve ter pelo menos um caractere adicional após o TAG do pai. Exemplo: ${parentTag}M1` 
+        });
       }
 
       hierarchyLevel = 1;
@@ -400,12 +414,12 @@ router.put('/:id', async (req, res) => {
       }
     }
 
-    // Se for equipamento filho, verificar se o pai existe
+    // Se for equipamento filho, verificar se o pai existe e validar o padrão do TAG
     let hierarchyLevel = 0;
     if (parentTag && !isParent) {
       const parentExists = await pool.request()
         .input('parentTag', sql.NVarChar, parentTag)
-        .query('SELECT id, isParent FROM Equipment WHERE tag = @parentTag');
+        .query('SELECT id, isParent, tag FROM Equipment WHERE tag = @parentTag');
 
       if (parentExists.recordset.length === 0) {
         return res.status(400).json({ error: 'Equipamento pai não encontrado' });
@@ -414,6 +428,22 @@ router.put('/:id', async (req, res) => {
       const parent = parentExists.recordset[0];
       if (!parent.isParent) {
         return res.status(400).json({ error: 'O equipamento pai deve ser marcado como pai' });
+      }
+
+      // Validar se o TAG do filho segue o padrão do pai (apenas se o TAG foi alterado)
+      if (equipmentTag) {
+        if (!equipmentTag.startsWith(parentTag)) {
+          return res.status(400).json({ 
+            error: `O TAG do equipamento filho deve começar com o TAG do pai (${parentTag}). Exemplo: ${parentTag}M1` 
+          });
+        }
+
+        // Verificar se o TAG do filho tem pelo menos um caractere adicional após o TAG do pai
+        if (equipmentTag.length <= parentTag.length) {
+          return res.status(400).json({ 
+            error: `O TAG do equipamento filho deve ter pelo menos um caractere adicional após o TAG do pai. Exemplo: ${parentTag}M1` 
+          });
+        }
       }
 
       hierarchyLevel = 1;
