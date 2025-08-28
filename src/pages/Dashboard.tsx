@@ -2,7 +2,6 @@ import { MetricCard } from "@/components/dashboard/MetricCard";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { 
   Activity, 
-  AlertTriangle, 
   CheckCircle, 
   Wrench
 } from "lucide-react";
@@ -39,8 +38,8 @@ const Dashboard = () => {
               Carregando dados em tempo real...
             </p>
           </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {[...Array(6)].map((_, i) => (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            {[...Array(5)].map((_, i) => (
               <div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />
             ))}
           </div>
@@ -99,7 +98,7 @@ const Dashboard = () => {
         </div>
 
         {/* Metrics Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
           <MetricCard
             title="Progresso Total"
             value={`${metrics?.progressTotal || 0}%`}
@@ -137,12 +136,12 @@ const Dashboard = () => {
           />
           
           <MetricCard
-            title="Tarefas Concluídas"
-            value={metrics?.completedTasks || 0}
-            subtitle={`de ${metrics?.totalTasks || 0} totais`}
+            title="Equipamentos com 100%"
+            value={metrics?.equipmentsWith100Percent || 0}
+            subtitle={`de ${metrics?.equipmentCount || 0} totais`}
             icon={CheckCircle}
             trend={{ 
-              value: getTrendValue(metrics?.completedTasks || 0, metrics?.totalTasks || 1), 
+              value: getTrendValue(metrics?.equipmentsWith100Percent || 0, metrics?.equipmentCount || 1), 
               label: "taxa de conclusão", 
               isPositive: true 
             }}
@@ -160,17 +159,7 @@ const Dashboard = () => {
             }}
           />
           
-          <MetricCard
-            title="Alertas"
-            value={metrics?.alerts || 0}
-            subtitle={`${metrics?.overdueTasks || 0} vencidas`}
-            icon={AlertTriangle}
-            trend={{ 
-              value: metrics?.lowProgressTasks || 0, 
-              label: "baixo progresso", 
-              isPositive: false 
-            }}
-          />
+
           
 
         </div>

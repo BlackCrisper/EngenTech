@@ -51,19 +51,40 @@ router.get('/metrics', async (req, res) => {
       FROM Equipment
     `;
     
+    // 2.1. Contar equipamentos com 100% de progresso
+    let equipmentProgressQuery = `
+      SELECT 
+        COUNT(*) as totalEquipment,
+        COUNT(CASE WHEN equipmentProgress.averageProgress = 100 THEN 1 END) as equipmentsWith100Percent
+      FROM Equipment e
+      LEFT JOIN (
+        SELECT 
+          equipmentId,
+          AVG(currentProgress) as averageProgress
+        FROM EquipmentTasks
+        WHERE currentProgress IS NOT NULL
+        GROUP BY equipmentId
+      ) equipmentProgress ON e.id = equipmentProgress.equipmentId
+    `;
+    
     // Filtrar por projeto se não for admin
     if (req.user.role !== 'admin') {
       equipmentQuery += ' WHERE projectId = @projectId';
+      equipmentProgressQuery += ' WHERE e.projectId = @projectId';
     }
     
     const equipmentRequest = pool.request();
+    const equipmentProgressRequest = pool.request();
     if (req.user.role !== 'admin') {
       equipmentRequest.input('projectId', sql.Int, req.user.projectId);
+      equipmentProgressRequest.input('projectId', sql.Int, req.user.projectId);
     }
     
     const equipmentResult = await equipmentRequest.query(equipmentQuery);
+    const equipmentProgressResult = await equipmentProgressRequest.query(equipmentProgressQuery);
 
     const equipmentData = equipmentResult.recordset[0];
+    const equipmentProgressData = equipmentProgressResult.recordset[0];
 
     // 3. Contar áreas ativas e progresso por área
     let areasQuery = `
@@ -270,6 +291,7 @@ router.get('/metrics', async (req, res) => {
       activeAreas: areasData?.activeAreas || 0,
       alerts: lowProgressTasks + overdueTasks + sesmtStats.accidents_incidents,
       childEquipmentCount: equipmentData?.childEquipment || 0,
+      equipmentsWith100Percent: equipmentProgressData?.equipmentsWith100Percent || 0,
       
       // Métricas detalhadas
       totalTasks: totalTasks,

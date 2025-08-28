@@ -20,7 +20,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
-  ChevronsRight
+  ChevronsRight,
+  AlertTriangle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -180,16 +181,7 @@ export default function AdvancedReports() {
 
 
 
-  // Preparar dados para gráfico geral de status
-  const prepareOverallStatusData = () => {
-    if (!progressOverview) return [];
-    
-    return [
-      { name: 'Concluídas', value: progressOverview.completedTasks, color: '#333333' },
-      { name: 'Em Progresso', value: progressOverview.inProgressTasks, color: '#666666' },
-      { name: 'Pendentes', value: progressOverview.pendingTasks, color: '#999999' }
-    ].filter(item => item.value > 0);
-  };
+
 
   // Funções de paginação
   const goToPage = (page: number) => {
@@ -238,8 +230,8 @@ export default function AdvancedReports() {
           {/* Visão Geral */}
           <TabsContent value="overview" className="space-y-6">
             {overviewLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[...Array(4)].map((_, i) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[...Array(3)].map((_, i) => (
                   <Card key={i} className="animate-pulse">
                     <CardContent className="p-6">
                       <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
@@ -251,7 +243,7 @@ export default function AdvancedReports() {
             ) : progressOverview ? (
               <>
                                  {/* Cards de métricas */}
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                    <Card className="border-l-4 border-l-gray-600 bg-gradient-to-r from-gray-50 to-white">
                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                        <CardTitle className="text-sm font-medium">Total de Equipamentos</CardTitle>
@@ -291,103 +283,212 @@ export default function AdvancedReports() {
                      </CardContent>
                    </Card>
 
-                   <Card className="border-l-4 border-l-gray-900 bg-gradient-to-r from-gray-50 to-white">
-                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                       <CardTitle className="text-sm font-medium">Horas Trabalhadas</CardTitle>
-                       <Clock className="h-4 w-4 text-gray-900" />
-                     </CardHeader>
-                     <CardContent>
-                       <div className="text-2xl font-bold text-gray-900">{progressOverview.totalActualHours}h</div>
-                       <p className="text-xs text-muted-foreground">
-                         de {progressOverview.totalEstimatedHours}h estimadas
-                       </p>
-                     </CardContent>
-                   </Card>
+
                  </div>
 
-                {/* Gráfico geral de status das tarefas */}
+                {/* Progresso por Tipo de Tarefa */}
                 <Card className="shadow-lg">
                   <CardHeader>
-                                         <CardTitle className="flex items-center gap-2">
-                       <PieChart className="h-5 w-5 text-gray-700" />
-                       Status Geral das Tarefas
-                     </CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5 text-gray-700" />
+                      Progresso por Tipo de Tarefa
+                    </CardTitle>
                     <p className="text-sm text-muted-foreground">
-                      Distribuição geral do status de todas as tarefas do projeto
+                      Comparação do progresso entre diferentes tipos de atividades
                     </p>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {/* Gráfico de Pizza */}
-                      <div className="h-80">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <RechartsPieChart>
-                            <Pie
-                              data={prepareOverallStatusData()}
-                              cx="50%"
-                              cy="50%"
-                              labelLine={false}
-                              label={({ name, percent, value }) => 
-                                `${name}: ${value} (${(percent * 100).toFixed(0)}%)`
-                              }
-                              outerRadius={120}
-                              fill="#8884d8"
-                              dataKey="value"
-                            >
-                              {prepareOverallStatusData().map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.color} />
-                              ))}
-                            </Pie>
-                            <Tooltip 
-                              formatter={(value, name) => [value, name]}
-                              labelFormatter={(label) => `${label}`}
-                            />
-                          </RechartsPieChart>
-                        </ResponsiveContainer>
-                      </div>
-                      
-                      {/* Legenda e estatísticas */}
-                      <div className="space-y-4">
-                        <div className="text-sm text-muted-foreground">
-                          <h4 className="font-semibold text-foreground mb-3">Resumo do Status</h4>
-                        </div>
-                        
-                                                {prepareOverallStatusData().map((item, index) => (
-                           <div key={index} className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-white rounded-lg border border-gray-200 shadow-sm">
-                             <div className="flex items-center gap-3">
-                               <div 
-                                 className="w-4 h-4 rounded-full" 
-                                 style={{ backgroundColor: item.color }}
+                                     <CardContent>
+                     <div className="space-y-8">
+                       {/* Gráfico de Barras */}
+                       <div>
+                         <div className="h-80 bg-gradient-to-br from-gray-50 to-white rounded-lg p-4 border border-gray-100">
+                           <ResponsiveContainer width="100%" height="100%">
+                             <BarChart
+                               data={[
+                                 {
+                                   name: 'Civil',
+                                   progress: progressOverview?.civilProgress || 0,
+                                   tasks: progressOverview?.civilTasks || 0,
+                                   completed: progressOverview?.civilCompleted || 0
+                                 },
+                                 {
+                                   name: 'Elétrica',
+                                   progress: progressOverview?.electricalProgress || 0,
+                                   tasks: progressOverview?.electricalTasks || 0,
+                                   completed: progressOverview?.electricalCompleted || 0
+                                 },
+                                 {
+                                   name: 'Mecânica',
+                                   progress: progressOverview?.mechanicalProgress || 0,
+                                   tasks: progressOverview?.mechanicalTasks || 0,
+                                   completed: progressOverview?.mechanicalCompleted || 0
+                                 }
+                               ]}
+                               margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                             >
+                               <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                               <XAxis 
+                                 dataKey="name" 
+                                 tick={{ fill: '#6B7280', fontSize: 12 }}
+                                 axisLine={{ stroke: '#E5E7EB' }}
                                />
-                               <span className="font-medium">{item.name}</span>
+                               <YAxis 
+                                 tick={{ fill: '#6B7280', fontSize: 12 }}
+                                 axisLine={{ stroke: '#E5E7EB' }}
+                                 tickLine={{ stroke: '#E5E7EB' }}
+                               />
+                               <Tooltip 
+                                 formatter={(value, name) => [value + '%', 'Progresso']}
+                                 labelFormatter={(label) => `${label}`}
+                                 contentStyle={{
+                                   backgroundColor: '#FFFFFF',
+                                   border: '1px solid #E5E7EB',
+                                   borderRadius: '8px',
+                                   boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                 }}
+                               />
+                               <Bar dataKey="progress" fill="#666666" radius={[4, 4, 0, 0]} />
+                             </BarChart>
+                           </ResponsiveContainer>
+                         </div>
+                       </div>
+                       
+                       {/* Cards de detalhamento monocromáticos */}
+                       <div>
+                         <div className="text-sm text-muted-foreground mb-6">
+                           <h4 className="font-semibold text-foreground text-lg">Detalhamento por Tipo</h4>
+                           <p className="text-xs text-muted-foreground mt-1">
+                             Análise detalhada de cada área
+                           </p>
+                         </div>
+                         
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                           {/* Civil */}
+                           <div className="p-5 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+                             <div className="flex items-center justify-between mb-4">
+                               <div className="flex items-center gap-3">
+                                 <div className="p-2 bg-gray-600 rounded-lg">
+                                   <Building className="h-5 w-5 text-white" />
+                                 </div>
+                                 <div>
+                                   <span className="font-bold text-gray-900 text-lg">Civil</span>
+                                   <div className="text-xs text-gray-600">Infraestrutura</div>
+                                 </div>
+                               </div>
+                               <Badge className="bg-gray-600 text-white font-semibold">
+                                 {progressOverview?.civilTasks || 0}
+                               </Badge>
                              </div>
-                             <div className="text-right">
-                               <div className="font-bold text-lg">{item.value}</div>
-                               <div className="text-xs text-muted-foreground">
-                                 {((item.value / progressOverview.totalTasks) * 100).toFixed(1)}%
+                             <div className="space-y-3">
+                               <div className="flex justify-between items-center">
+                                 <span className="text-sm font-medium text-gray-700">Progresso:</span>
+                                 <span className="font-bold text-gray-900 text-xl">{progressOverview?.civilProgress || 0}%</span>
+                               </div>
+                               <Progress 
+                                 value={progressOverview?.civilProgress || 0} 
+                                 className="h-3 bg-gray-200" 
+                                 style={{
+                                   '--progress-background': '#666666'
+                                 } as React.CSSProperties}
+                               />
+                               <div className="grid grid-cols-2 gap-2 mt-3">
+                                 <div className="bg-gray-100 rounded-lg p-2 text-center">
+                                   <div className="text-xs text-gray-600">Tarefas</div>
+                                   <div className="font-bold text-gray-900">{progressOverview?.civilTasks || 0}</div>
+                                 </div>
+                                 <div className="bg-gray-100 rounded-lg p-2 text-center">
+                                   <div className="text-xs text-gray-600">Concluídas</div>
+                                   <div className="font-bold text-gray-900">{progressOverview?.civilCompleted || 0}</div>
+                                 </div>
                                </div>
                              </div>
                            </div>
-                         ))}
-                        
-                                                 <div className="pt-4 border-t">
-                           <div className="flex justify-between text-sm p-2 bg-gray-50 rounded border border-gray-200">
-                             <span className="text-muted-foreground">Taxa de Conclusão:</span>
-                             <span className="font-semibold text-gray-700">{progressOverview.completionRate}%</span>
+
+                           {/* Elétrica */}
+                           <div className="p-5 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+                             <div className="flex items-center justify-between mb-4">
+                               <div className="flex items-center gap-3">
+                                 <div className="p-2 bg-gray-700 rounded-lg">
+                                   <Zap className="h-5 w-5 text-white" />
+                                 </div>
+                                 <div>
+                                   <span className="font-bold text-gray-900 text-lg">Elétrica</span>
+                                   <div className="text-xs text-gray-600">Sistemas Elétricos</div>
+                                 </div>
+                               </div>
+                               <Badge className="bg-gray-700 text-white font-semibold">
+                                 {progressOverview?.electricalTasks || 0}
+                               </Badge>
+                             </div>
+                             <div className="space-y-3">
+                               <div className="flex justify-between items-center">
+                                 <span className="text-sm font-medium text-gray-700">Progresso:</span>
+                                 <span className="font-bold text-gray-900 text-xl">{progressOverview?.electricalProgress || 0}%</span>
+                               </div>
+                               <Progress 
+                                 value={progressOverview?.electricalProgress || 0} 
+                                 className="h-3 bg-gray-200"
+                                 style={{
+                                   '--progress-background': '#666666'
+                                 } as React.CSSProperties}
+                               />
+                               <div className="grid grid-cols-2 gap-2 mt-3">
+                                 <div className="bg-gray-100 rounded-lg p-2 text-center">
+                                   <div className="text-xs text-gray-600">Tarefas</div>
+                                   <div className="font-bold text-gray-900">{progressOverview?.electricalTasks || 0}</div>
+                                 </div>
+                                 <div className="bg-gray-100 rounded-lg p-2 text-center">
+                                   <div className="text-xs text-gray-600">Concluídas</div>
+                                   <div className="font-bold text-gray-900">{progressOverview?.electricalCompleted || 0}</div>
+                                 </div>
+                               </div>
+                             </div>
                            </div>
-                           <div className="flex justify-between text-sm p-2 bg-gray-100 rounded border border-gray-300 mt-2">
-                             <span className="text-muted-foreground">Eficiência:</span>
-                             <span className="font-semibold text-gray-800">
-                               {progressOverview.totalEstimatedHours > 0 
-                                 ? ((progressOverview.totalActualHours / progressOverview.totalEstimatedHours) * 100).toFixed(1)
-                                 : 0
-                               }%
-                             </span>
+
+                           {/* Mecânica */}
+                           <div className="p-5 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+                             <div className="flex items-center justify-between mb-4">
+                               <div className="flex items-center gap-3">
+                                 <div className="p-2 bg-gray-800 rounded-lg">
+                                   <Wrench className="h-5 w-5 text-white" />
+                                 </div>
+                                 <div>
+                                   <span className="font-bold text-gray-900 text-lg">Mecânica</span>
+                                   <div className="text-xs text-gray-600">Sistemas Mecânicos</div>
+                                 </div>
+                               </div>
+                               <Badge className="bg-gray-800 text-white font-semibold">
+                                 {progressOverview?.mechanicalTasks || 0}
+                               </Badge>
+                             </div>
+                             <div className="space-y-3">
+                               <div className="flex justify-between items-center">
+                                 <span className="text-sm font-medium text-gray-700">Progresso:</span>
+                                 <span className="font-bold text-gray-900 text-xl">{progressOverview?.mechanicalProgress || 0}%</span>
+                               </div>
+                               <Progress 
+                                 value={progressOverview?.mechanicalProgress || 0} 
+                                 className="h-3 bg-gray-200"
+                                 style={{
+                                   '--progress-background': '#666666'
+                                 } as React.CSSProperties}
+                               />
+                               <div className="grid grid-cols-2 gap-2 mt-3">
+                                 <div className="bg-gray-100 rounded-lg p-2 text-center">
+                                   <div className="text-xs text-gray-600">Tarefas</div>
+                                   <div className="font-bold text-gray-900">{progressOverview?.mechanicalTasks || 0}</div>
+                                 </div>
+                                 <div className="bg-gray-100 rounded-lg p-2 text-center">
+                                   <div className="text-xs text-gray-600">Concluídas</div>
+                                   <div className="font-bold text-gray-900">{progressOverview?.mechanicalCompleted || 0}</div>
+                                 </div>
+                               </div>
+                             </div>
                            </div>
                          </div>
-                      </div>
-                    </div>
-                  </CardContent>
+                       </div>
+                     </div>
+                   </CardContent>
                 </Card>
 
                 
