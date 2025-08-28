@@ -12,7 +12,10 @@ import {
   Calendar,
   Target,
   CheckCircle,
-  XCircle
+  XCircle,
+  Zap,
+  Wrench,
+  Building
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -32,10 +35,25 @@ import {
   ResponsiveContainer,
   PieChart as RechartsPieChart,
   Pie,
-  Cell
+  Cell,
+  LineChart,
+  Line,
+  AreaChart,
+  Area
 } from 'recharts';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+const COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
+const DISCIPLINE_COLORS = {
+  electrical: '#3B82F6',
+  mechanical: '#F59E0B', 
+  civil: '#10B981'
+};
+
+const DISCIPLINE_ICONS = {
+  electrical: Zap,
+  mechanical: Wrench,
+  civil: Building
+};
 
 export default function AdvancedReports() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -100,6 +118,30 @@ export default function AdvancedReports() {
     console.log(`Exportando relatório: ${type}`);
   };
 
+  // Preparar dados para gráficos de pizza por disciplina
+  const prepareDisciplinePieData = (discipline: any) => {
+    const completed = discipline.completedTasks;
+    const inProgress = discipline.totalTasks - discipline.completedTasks - (discipline.pendingTasks || 0);
+    const pending = discipline.pendingTasks || 0;
+    
+    return [
+      { name: 'Concluídas', value: completed, color: '#10B981' },
+      { name: 'Em Progresso', value: inProgress, color: '#3B82F6' },
+      { name: 'Pendentes', value: pending, color: '#6B7280' }
+    ].filter(item => item.value > 0);
+  };
+
+  // Preparar dados para gráfico geral de status
+  const prepareOverallStatusData = () => {
+    if (!progressOverview) return [];
+    
+    return [
+      { name: 'Concluídas', value: progressOverview.completedTasks, color: '#10B981' },
+      { name: 'Em Progresso', value: progressOverview.inProgressTasks, color: '#3B82F6' },
+      { name: 'Pendentes', value: progressOverview.pendingTasks, color: '#6B7280' }
+    ].filter(item => item.value > 0);
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -151,10 +193,10 @@ export default function AdvancedReports() {
               <>
                 {/* Cards de métricas */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <Card>
+                  <Card className="border-l-4 border-l-blue-500">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Total de Tarefas</CardTitle>
-                      <Target className="h-4 w-4 text-muted-foreground" />
+                      <Target className="h-4 w-4 text-blue-500" />
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">{progressOverview.totalTasks}</div>
@@ -164,7 +206,7 @@ export default function AdvancedReports() {
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  <Card className="border-l-4 border-l-green-500">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Tarefas Concluídas</CardTitle>
                       <CheckCircle className="h-4 w-4 text-green-600" />
@@ -177,24 +219,24 @@ export default function AdvancedReports() {
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  <Card className="border-l-4 border-l-orange-500">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Progresso Médio</CardTitle>
-                      <TrendingUp className="h-4 w-4 text-blue-600" />
+                      <TrendingUp className="h-4 w-4 text-orange-600" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-blue-600">{progressOverview.averageProgress}%</div>
+                      <div className="text-2xl font-bold text-orange-600">{progressOverview.averageProgress}%</div>
                       <Progress value={progressOverview.averageProgress} className="mt-2" />
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  <Card className="border-l-4 border-l-purple-500">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Horas Trabalhadas</CardTitle>
-                      <Clock className="h-4 w-4 text-orange-600" />
+                      <Clock className="h-4 w-4 text-purple-600" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-orange-600">{progressOverview.totalActualHours}h</div>
+                      <div className="text-2xl font-bold text-purple-600">{progressOverview.totalActualHours}h</div>
                       <p className="text-xs text-muted-foreground">
                         de {progressOverview.totalEstimatedHours}h estimadas
                       </p>
@@ -202,41 +244,183 @@ export default function AdvancedReports() {
                   </Card>
                 </div>
 
-                {/* Gráfico de status das tarefas */}
-                <Card>
+                {/* Gráfico geral de status das tarefas */}
+                <Card className="shadow-lg">
                   <CardHeader>
-                    <CardTitle>Status das Tarefas</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      <PieChart className="h-5 w-5 text-blue-600" />
+                      Status Geral das Tarefas
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Distribuição geral do status de todas as tarefas do projeto
+                    </p>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <RechartsPieChart>
-                        <Pie
-                          data={[
-                            { name: 'Concluídas', value: progressOverview.completedTasks, color: '#10B981' },
-                            { name: 'Em Progresso', value: progressOverview.inProgressTasks, color: '#3B82F6' },
-                            { name: 'Pendentes', value: progressOverview.pendingTasks, color: '#6B7280' }
-                          ]}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {[
-                            { name: 'Concluídas', value: progressOverview.completedTasks, color: '#10B981' },
-                            { name: 'Em Progresso', value: progressOverview.inProgressTasks, color: '#3B82F6' },
-                            { name: 'Pendentes', value: progressOverview.pendingTasks, color: '#6B7280' }
-                          ].map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </RechartsPieChart>
-                    </ResponsiveContainer>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Gráfico de Pizza */}
+                      <div className="h-80">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <RechartsPieChart>
+                            <Pie
+                              data={prepareOverallStatusData()}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              label={({ name, percent, value }) => 
+                                `${name}: ${value} (${(percent * 100).toFixed(0)}%)`
+                              }
+                              outerRadius={120}
+                              fill="#8884d8"
+                              dataKey="value"
+                            >
+                              {prepareOverallStatusData().map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <Tooltip 
+                              formatter={(value, name) => [value, name]}
+                              labelFormatter={(label) => `${label}`}
+                            />
+                          </RechartsPieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      
+                      {/* Legenda e estatísticas */}
+                      <div className="space-y-4">
+                        <div className="text-sm text-muted-foreground">
+                          <h4 className="font-semibold text-foreground mb-3">Resumo do Status</h4>
+                        </div>
+                        
+                        {prepareOverallStatusData().map((item, index) => (
+                          <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div 
+                                className="w-4 h-4 rounded-full" 
+                                style={{ backgroundColor: item.color }}
+                              />
+                              <span className="font-medium">{item.name}</span>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-bold text-lg">{item.value}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {((item.value / progressOverview.totalTasks) * 100).toFixed(1)}%
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        
+                        <div className="pt-4 border-t">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Taxa de Conclusão:</span>
+                            <span className="font-semibold">{progressOverview.completionRate}%</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Eficiência:</span>
+                            <span className="font-semibold">
+                              {progressOverview.totalEstimatedHours > 0 
+                                ? ((progressOverview.totalActualHours / progressOverview.totalEstimatedHours) * 100).toFixed(1)
+                                : 0
+                              }%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
+
+                {/* Gráficos por disciplina */}
+                {disciplineData && (
+                  <div className="space-y-6">
+                    <div className="text-center">
+                      <h3 className="text-xl font-semibold mb-2">Status por Disciplina</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Análise detalhada do progresso de cada disciplina
+                      </p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      {disciplineData.map((discipline: any) => {
+                        const IconComponent = DISCIPLINE_ICONS[discipline.discipline as keyof typeof DISCIPLINE_ICONS];
+                        const pieData = prepareDisciplinePieData(discipline);
+                        
+                        return (
+                          <Card key={discipline.discipline} className="shadow-lg hover:shadow-xl transition-shadow">
+                            <CardHeader className="pb-4">
+                              <CardTitle className="flex items-center gap-2 text-lg">
+                                <IconComponent className="h-5 w-5" style={{ color: DISCIPLINE_COLORS[discipline.discipline as keyof typeof DISCIPLINE_COLORS] }} />
+                                {getDisciplineLabel(discipline.discipline)}
+                              </CardTitle>
+                              <div className="flex justify-between items-center">
+                                <span className="text-2xl font-bold" style={{ color: DISCIPLINE_COLORS[discipline.discipline as keyof typeof DISCIPLINE_COLORS] }}>
+                                  {discipline.averageProgress}%
+                                </span>
+                                <Badge variant="outline">
+                                  {discipline.totalTasks} tarefas
+                                </Badge>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                              {/* Gráfico de Pizza */}
+                              <div className="h-48">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <RechartsPieChart>
+                                    <Pie
+                                      data={pieData}
+                                      cx="50%"
+                                      cy="50%"
+                                      labelLine={false}
+                                      label={({ name, percent }) => 
+                                        percent > 0.1 ? `${(percent * 100).toFixed(0)}%` : ''
+                                      }
+                                      outerRadius={60}
+                                      fill="#8884d8"
+                                      dataKey="value"
+                                    >
+                                      {pieData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                      ))}
+                                    </Pie>
+                                    <Tooltip 
+                                      formatter={(value, name) => [value, name]}
+                                      labelFormatter={(label) => `${label}`}
+                                    />
+                                  </RechartsPieChart>
+                                </ResponsiveContainer>
+                              </div>
+                              
+                              {/* Estatísticas detalhadas */}
+                              <div className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-muted-foreground">Concluídas:</span>
+                                  <span className="font-medium text-green-600">{discipline.completedTasks}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-muted-foreground">Em Progresso:</span>
+                                  <span className="font-medium text-blue-600">
+                                    {discipline.totalTasks - discipline.completedTasks - (discipline.pendingTasks || 0)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-muted-foreground">Pendentes:</span>
+                                  <span className="font-medium text-gray-600">{discipline.pendingTasks || 0}</span>
+                                </div>
+                                <div className="pt-2 border-t">
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">Horas:</span>
+                                    <span className="font-medium">
+                                      {discipline.totalActualHours}h / {discipline.totalEstimatedHours}h
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </>
             ) : null}
           </TabsContent>
