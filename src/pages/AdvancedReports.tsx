@@ -70,8 +70,8 @@ export default function AdvancedReports() {
   
   // Estados para filtros e paginação
   const [searchTerm, setSearchTerm] = useState('');
-  const [areaFilter, setAreaFilter] = useState('');
-  const [progressFilter, setProgressFilter] = useState('');
+  const [areaFilter, setAreaFilter] = useState('all');
+  const [progressFilter, setProgressFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
 
   // Buscar dados dos relatórios
@@ -115,31 +115,31 @@ export default function AdvancedReports() {
       );
     }
     
-    // Filtro por área
-    if (areaFilter) {
-      filtered = filtered.filter((equipment: any) => equipment.areaName === areaFilter);
-    }
-    
-    // Filtro por progresso
-    if (progressFilter) {
-      switch (progressFilter) {
-        case 'completed':
-          filtered = filtered.filter((equipment: any) => equipment.averageProgress >= 100);
-          break;
-        case 'in-progress':
-          filtered = filtered.filter((equipment: any) => equipment.averageProgress > 0 && equipment.averageProgress < 100);
-          break;
-        case 'pending':
-          filtered = filtered.filter((equipment: any) => equipment.averageProgress === 0);
-          break;
-        case 'high-progress':
-          filtered = filtered.filter((equipment: any) => equipment.averageProgress >= 75);
-          break;
-        case 'low-progress':
-          filtered = filtered.filter((equipment: any) => equipment.averageProgress < 25);
-          break;
-      }
-    }
+         // Filtro por área
+     if (areaFilter && areaFilter !== 'all') {
+       filtered = filtered.filter((equipment: any) => equipment.areaName === areaFilter);
+     }
+     
+     // Filtro por progresso
+     if (progressFilter && progressFilter !== 'all') {
+       switch (progressFilter) {
+         case 'completed':
+           filtered = filtered.filter((equipment: any) => equipment.averageProgress >= 100);
+           break;
+         case 'in-progress':
+           filtered = filtered.filter((equipment: any) => equipment.averageProgress > 0 && equipment.averageProgress < 100);
+           break;
+         case 'pending':
+           filtered = filtered.filter((equipment: any) => equipment.averageProgress === 0);
+           break;
+         case 'high-progress':
+           filtered = filtered.filter((equipment: any) => equipment.averageProgress >= 75);
+           break;
+         case 'low-progress':
+           filtered = filtered.filter((equipment: any) => equipment.averageProgress < 25);
+           break;
+       }
+     }
     
     return filtered;
   }, [equipmentData, searchTerm, areaFilter, progressFilter]);
@@ -237,8 +237,8 @@ export default function AdvancedReports() {
 
   const resetFilters = () => {
     setSearchTerm('');
-    setAreaFilter('');
-    setProgressFilter('');
+    setAreaFilter('all');
+    setProgressFilter('all');
     setCurrentPage(1);
   };
 
@@ -637,33 +637,33 @@ export default function AdvancedReports() {
                         />
                       </div>
                       
-                      {/* Filtro por Área */}
-                      <Select value={areaFilter} onValueChange={setAreaFilter}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Todas as áreas" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">Todas as áreas</SelectItem>
-                          {uniqueAreas.map((area) => (
-                            <SelectItem key={area} value={area}>{area}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      
-                      {/* Filtro por Progresso */}
-                      <Select value={progressFilter} onValueChange={setProgressFilter}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Todos os status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">Todos os status</SelectItem>
-                          <SelectItem value="completed">Concluídos (100%)</SelectItem>
-                          <SelectItem value="high-progress">Alto Progresso (≥75%)</SelectItem>
-                          <SelectItem value="in-progress">Em Progresso (1-99%)</SelectItem>
-                          <SelectItem value="low-progress">Baixo Progresso (&lt;25%)</SelectItem>
-                          <SelectItem value="pending">Pendentes (0%)</SelectItem>
-                        </SelectContent>
-                      </Select>
+                                             {/* Filtro por Área */}
+                       <Select value={areaFilter} onValueChange={setAreaFilter}>
+                         <SelectTrigger>
+                           <SelectValue placeholder="Todas as áreas" />
+                         </SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="all">Todas as áreas</SelectItem>
+                           {uniqueAreas.map((area) => (
+                             <SelectItem key={area} value={area}>{area}</SelectItem>
+                           ))}
+                         </SelectContent>
+                       </Select>
+                       
+                       {/* Filtro por Progresso */}
+                       <Select value={progressFilter} onValueChange={setProgressFilter}>
+                         <SelectTrigger>
+                           <SelectValue placeholder="Todos os status" />
+                         </SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="all">Todos os status</SelectItem>
+                           <SelectItem value="completed">Concluídos (100%)</SelectItem>
+                           <SelectItem value="high-progress">Alto Progresso (≥75%)</SelectItem>
+                           <SelectItem value="in-progress">Em Progresso (1-99%)</SelectItem>
+                           <SelectItem value="low-progress">Baixo Progresso (&lt;25%)</SelectItem>
+                           <SelectItem value="pending">Pendentes (0%)</SelectItem>
+                         </SelectContent>
+                       </Select>
                       
                       {/* Botão Reset */}
                       <Button 

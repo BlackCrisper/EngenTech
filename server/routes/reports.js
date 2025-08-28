@@ -133,6 +133,7 @@ router.get('/by-equipment', checkPermission('reports', 'read'), async (req, res)
       FROM Equipment e
       LEFT JOIN Areas a ON e.areaId = a.id
       LEFT JOIN EquipmentTasks et ON e.id = et.equipmentId
+      WHERE e.isParent = 0
       GROUP BY e.id, e.tag, e.description, a.name
       ORDER BY e.tag
     `);
