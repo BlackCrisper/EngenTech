@@ -21,6 +21,8 @@ import {
   Upload,
   X
 } from 'lucide-react';
+import UpdateProgressModal from '@/components/tasks/UpdateProgressModal';
+import TaskHistoryModal from '@/components/tasks/TaskHistoryModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CapslockInput } from '@/components/ui/capslock-input';
@@ -53,7 +55,7 @@ export default function EquipmentTasks() {
   const [selectedTask, setSelectedTask] = useState<EquipmentTask | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isProgressDialogOpen, setIsProgressDialogOpen] = useState(false);
-  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
+
      const [filters, setFilters] = useState({
      discipline: 'all',
      status: 'all',
@@ -66,6 +68,7 @@ export default function EquipmentTasks() {
   });
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isProgressWithPhotosDialogOpen, setIsProgressWithPhotosDialogOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -229,19 +232,14 @@ export default function EquipmentTasks() {
     updateProgressMutation.mutate(progressData);
   };
 
-  const handleUpdateProgressWithPhotos = () => {
+  const handleUpdateProgressWithPhotos = (formData: FormData) => {
     if (!selectedTask) return;
-    
-    const formData = new FormData();
-    formData.append('currentProgress', progressData.currentProgress.toString());
-    formData.append('observations', progressData.observations);
-    formData.append('actualHours', progressData.actualHours.toString());
-    
-    selectedFiles.forEach((file) => {
-      formData.append('photos', file);
-    });
-    
     updateProgressWithPhotosMutation.mutate(formData);
+  };
+
+  const handleViewHistory = (task: EquipmentTask) => {
+    setSelectedTask(task);
+    setIsHistoryModalOpen(true);
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -591,10 +589,7 @@ export default function EquipmentTasks() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        setSelectedTask(task);
-                        setIsHistoryDialogOpen(true);
-                      }}
+                      onClick={() => handleViewHistory(task)}
                     >
                       <History className="w-4 h-4 mr-1" />
                       Histórico
@@ -711,31 +706,7 @@ export default function EquipmentTasks() {
           </DialogContent>
         </Dialog>
 
-        {/* Dialog de Histórico */}
-        <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Histórico da Tarefa</DialogTitle>
-              <DialogDescription>
-                Visualize o histórico de alterações da tarefa
-              </DialogDescription>
-            </DialogHeader>
-            {selectedTask && (
-              <div className="space-y-4">
-                <div>
-                  <Label>Tarefa</Label>
-                  <p className="text-sm text-muted-foreground">{selectedTask.name}</p>
-                </div>
-                
-                <div className="max-h-96 overflow-y-auto">
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    Histórico em desenvolvimento...
-                  </p>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-                 </Dialog>
+
 
                   {/* Dialog de Atualização de Progresso com Fotos */}
           <Dialog open={isProgressWithPhotosDialogOpen} onOpenChange={setIsProgressWithPhotosDialogOpen}>
@@ -847,6 +818,28 @@ export default function EquipmentTasks() {
              )}
            </DialogContent>
          </Dialog>
+
+         {/* Modal de Atualização de Progresso com Fotos */}
+         <UpdateProgressModal
+           isOpen={isProgressWithPhotosDialogOpen}
+           onClose={() => {
+             setIsProgressWithPhotosDialogOpen(false);
+             setSelectedTask(null);
+           }}
+           task={selectedTask}
+           onUpdate={handleUpdateProgressWithPhotos}
+           isLoading={updateProgressWithPhotosMutation.isPending}
+         />
+
+         {/* Modal de Histórico */}
+         <TaskHistoryModal
+           isOpen={isHistoryModalOpen}
+           onClose={() => {
+             setIsHistoryModalOpen(false);
+             setSelectedTask(null);
+           }}
+           task={selectedTask}
+         />
        </div>
      </MainLayout>
    );

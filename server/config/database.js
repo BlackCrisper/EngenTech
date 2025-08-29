@@ -1,5 +1,6 @@
 import sql from 'mssql';
 import dotenv from 'dotenv';
+import { logger } from './logger.js';
 
 dotenv.config();
 
@@ -34,11 +35,11 @@ async function getConnection() {
   try {
     if (!pool) {
       pool = await sql.connect(dbConfig);
-      console.log('✅ Conectado ao SQL Server com sucesso!');
+      logger.success('Conectado ao SQL Server com sucesso!');
     }
     return pool;
   } catch (error) {
-    console.error('❌ Erro ao conectar ao SQL Server:', error);
+    logger.error('Erro ao conectar ao SQL Server:', error.message);
     throw error;
   }
 }
@@ -48,10 +49,10 @@ async function closeConnection() {
     if (pool) {
       await pool.close();
       pool = null;
-      console.log('🔌 Conexão com SQL Server fechada');
+      logger.info('Conexão com SQL Server fechada');
     }
   } catch (error) {
-    console.error('❌ Erro ao fechar conexão:', error);
+    logger.error('Erro ao fechar conexão:', error.message);
   }
 }
 

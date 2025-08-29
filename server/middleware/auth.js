@@ -1,22 +1,20 @@
 import jwt from 'jsonwebtoken';
 import { getConnection, sql } from '../config/database.js';
 import { config } from '../config/env.js';
+import { logger } from '../config/logger.js';
 
 // Middleware para verificar se o usuário está autenticado
 export const authenticateToken = async (req, res, next) => {
   try {
-    console.log('🔐 Autenticando rota:', req.method, req.path);
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
-      console.log('❌ Token não fornecido');
+      logger.auth('Acesso negado: Token não fornecido');
       return res.status(401).json({ error: 'Token de acesso necessário' });
     }
 
-    console.log('✅ Token fornecido, verificando...');
     const decoded = jwt.verify(token, config.JWT_SECRET);
-    console.log('✅ Token válido, userId:', decoded.userId);
     
     const pool = await getConnection();
     
@@ -25,15 +23,20 @@ export const authenticateToken = async (req, res, next) => {
       .query('SELECT id, username, email, role, active as isActive, projectId FROM Users WHERE id = @userId AND active = 1');
 
     if (result.recordset.length === 0) {
-      console.log('❌ Usuário não encontrado ou inativo');
+      logger.auth('Acesso negado: Usuário não encontrado ou inativo');
       return res.status(401).json({ error: 'Usuário não encontrado ou inativo' });
     }
 
     req.user = result.recordset[0];
-    console.log('✅ Usuário autenticado:', req.user.username, 'Role:', req.user.role);
+    
+    // Log apenas para ações importantes (não para GET simples)
+    if (req.method !== 'GET' || req.path.includes('/delete') || req.path.includes('/create') || req.path.includes('/update')) {
+      logger.auth(`${req.method} ${req.path} - ${req.user.username} (${req.user.role})`);
+    }
+    
     next();
   } catch (error) {
-    console.error('❌ Erro na autenticação:', error);
+    logger.error('Erro na autenticação:', error.message);
     return res.status(403).json({ error: 'Token inválido' });
   }
 };
@@ -64,6 +67,7 @@ export const checkPermission = (resource, action) => {
         `);
 
       if (result.recordset[0].hasPermission === 0) {
+        logger.permission(`${req.user.username} (${req.user.role}) tentou ${action} ${resource}`);
         return res.status(403).json({ 
           error: 'Acesso negado',
           message: `Você não tem permissão para ${action} ${resource}`
@@ -72,7 +76,7 @@ export const checkPermission = (resource, action) => {
 
       next();
     } catch (error) {
-      console.error('Erro na verificação de permissão:', error);
+      logger.error('Erro na verificação de permissão:', error.message);
       return res.status(500).json({ error: 'Erro interno do servidor' });
     }
   };
@@ -106,7 +110,7 @@ export const auditLog = (action, resource) => {
                 VALUES (@userId, @action, @resource, @resourceId, @details, @ipAddress, @userAgent)
               `);
           } catch (error) {
-            console.error('Erro ao registrar log de auditoria:', error);
+            logger.error('Erro ao registrar log de auditoria:', error.message);
           }
         }, 100);
 
@@ -115,7 +119,7 @@ export const auditLog = (action, resource) => {
 
       next();
     } catch (error) {
-      console.error('Erro no middleware de auditoria:', error);
+      logger.error('Erro no middleware de auditoria:', error.message);
       next();
     }
   };
@@ -144,7 +148,7 @@ export const hasPermission = async (userId, resource, action) => {
 
     return result.recordset[0].hasPermission > 0;
   } catch (error) {
-    console.error('Erro ao verificar permissão:', error);
+    logger.error('Erro ao verificar permissão:', error.message);
     return false;
   }
 };

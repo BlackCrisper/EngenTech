@@ -7,7 +7,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Criar diretório de uploads se não existir
-const uploadsDir = path.join(__dirname, '../uploads');
+// Usar a pasta uploads no diretório raiz do projeto
+const uploadsDir = path.join(__dirname, '../../uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }

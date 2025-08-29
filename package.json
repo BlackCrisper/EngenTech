@@ -24,7 +24,11 @@
     "fix-permissions-simple": "node server/scripts/fix-permissions-simple.js",
     "fix-delete-permissions": "node server/scripts/fix-delete-permissions.js",
     "fix-supervisor-standard-tasks": "node server/scripts/fix-supervisor-standard-tasks.js",
-    "check-permissions": "node server/scripts/check-permissions.js"
+    "check-permissions": "node server/scripts/check-permissions.js",
+    "test-logs": "node server/scripts/test-logs.js",
+    "apply-task-improvements": "node server/scripts/apply-task-improvements.js",
+    "apply-task-improvements-simple": "node server/scripts/apply-task-improvements-simple.js",
+    "test-upload-system": "node server/scripts/test-upload-system.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

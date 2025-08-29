@@ -484,8 +484,22 @@ export const tasksService = {
   },
 
   // Buscar histórico de uma tarefa
-  getTaskHistory: async (taskId: number): Promise<TaskHistory[]> => {
-    const response = await api.get(`/tasks/${taskId}/history`);
+  getTaskHistory: async (taskId: number, limit?: number): Promise<TaskHistory[]> => {
+    const params = new URLSearchParams();
+    if (limit) params.append('limit', limit.toString());
+    const response = await api.get(`/tasks/${taskId}/history?${params.toString()}`);
+    return response.data;
+  },
+
+  // Buscar fotos de uma tarefa
+  getTaskPhotos: async (taskId: number): Promise<any[]> => {
+    const response = await api.get(`/tasks/${taskId}/photos`);
+    return response.data;
+  },
+
+  // Deletar registro de histórico de progresso
+  deleteTaskHistory: async (taskId: number, historyId: number) => {
+    const response = await api.delete(`/tasks/${taskId}/history/${historyId}`);
     return response.data;
   },
 
