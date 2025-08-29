@@ -20,7 +20,7 @@ export const authenticateToken = async (req, res, next) => {
     
     const result = await pool.request()
       .input('userId', sql.Int, decoded.userId)
-      .query('SELECT id, username, email, role, active as isActive, projectId FROM Users WHERE id = @userId AND active = 1');
+      .query('SELECT id, username, email, role, sector, active as isActive, projectId FROM Users WHERE id = @userId AND active = 1');
 
     if (result.recordset.length === 0) {
       logger.auth('Acesso negado: Usuário não encontrado ou inativo');
@@ -31,7 +31,7 @@ export const authenticateToken = async (req, res, next) => {
     
     // Log apenas para ações importantes (não para GET simples)
     if (req.method !== 'GET' || req.path.includes('/delete') || req.path.includes('/create') || req.path.includes('/update')) {
-      logger.auth(`${req.method} ${req.path} - ${req.user.username} (${req.user.role})`);
+      logger.auth(`${req.method} ${req.path} - ${req.user.username} (${req.user.role}) - Setor: ${req.user.sector}`);
     }
     
     next();
@@ -82,6 +82,150 @@ export const checkPermission = (resource, action) => {
   };
 };
 
+// Middleware para verificar permissões baseadas no setor
+export const checkSectorPermission = (resource, action) => {
+  return async (req, res, next) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+      }
+
+      // ADMIN pode tudo
+      if (req.user.role === 'ADMIN') {
+        return next();
+      }
+
+      // SUPERVISOR "all" pode tudo (limitado ao projeto)
+      if (req.user.role === 'SUPERVISOR' && req.user.sector === 'all') {
+        return next();
+      }
+
+      // SUPERVISOR de setor específico
+      if (req.user.role === 'SUPERVISOR' && req.user.sector !== 'all') {
+        // Verificar se está tentando acessar seu próprio setor
+        const targetSector = req.body.sector || req.query.sector || req.params.sector;
+        
+        if (targetSector === req.user.sector) {
+          logger.permission(`${req.user.username} (${req.user.role}) tentou ${action} ${resource} no próprio setor (${req.user.sector})`);
+          return res.status(403).json({ 
+            error: 'Acesso negado',
+            message: `Supervisor de ${req.user.sector} não pode ${action} recursos do próprio setor`
+          });
+        }
+
+        // Para visualização, permitir ver outros setores
+        if (action === 'read' || action === 'view') {
+          return next();
+        }
+
+        // Para outras ações, negar acesso a outros setores
+        logger.permission(`${req.user.username} (${req.user.role}) tentou ${action} ${resource} em setor diferente (${targetSector})`);
+        return res.status(403).json({ 
+          error: 'Acesso negado',
+          message: `Supervisor de ${req.user.sector} não pode ${action} recursos de outros setores`
+        });
+      }
+
+      // Para outros papéis, verificar permissão normal
+      const pool = await getConnection();
+      
+      const result = await pool.request()
+        .input('role', sql.NVarChar, req.user.role)
+        .input('resource', sql.NVarChar, resource)
+        .input('action', sql.NVarChar, action)
+        .query(`
+          SELECT COUNT(*) as hasPermission
+          FROM RolePermissions rp
+          JOIN Permissions p ON rp.permissionId = p.id
+          WHERE rp.role = @role 
+            AND p.resource = @resource 
+            AND p.action = @action
+            AND rp.granted = 1
+        `);
+
+      if (result.recordset[0].hasPermission === 0) {
+        logger.permission(`${req.user.username} (${req.user.role}) tentou ${action} ${resource}`);
+        return res.status(403).json({ 
+          error: 'Acesso negado',
+          message: `Você não tem permissão para ${action} ${resource}`
+        });
+      }
+
+      next();
+    } catch (error) {
+      logger.error('Erro na verificação de permissão por setor:', error.message);
+      return res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  };
+};
+
+// Middleware para verificar permissões de tarefas baseadas no setor
+export const checkTaskSectorPermission = (action) => {
+  return async (req, res, next) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+      }
+
+      // ADMIN pode tudo
+      if (req.user.role === 'ADMIN') {
+        return next();
+      }
+
+      // SUPERVISOR "all" pode tudo
+      if (req.user.role === 'SUPERVISOR' && req.user.sector === 'all') {
+        return next();
+      }
+
+      // Para outras ações, verificar o setor da tarefa
+      const pool = await getConnection();
+      
+      // Buscar o setor da tarefa
+      const taskId = req.params.taskId || req.params.id;
+      if (taskId) {
+        const taskResult = await pool.request()
+          .input('taskId', sql.Int, taskId)
+          .query(`
+            SELECT e.sector
+            FROM EquipmentTasks et
+            JOIN Equipment e ON et.equipmentId = e.id
+            WHERE et.id = @taskId
+          `);
+
+        if (taskResult.recordset.length > 0) {
+          const taskSector = taskResult.recordset[0].sector;
+          
+          // SUPERVISOR de setor específico
+          if (req.user.role === 'SUPERVISOR' && req.user.sector !== 'all') {
+            // Para visualização, permitir ver qualquer tarefa
+            if (action === 'read' || action === 'view') {
+              return next();
+            }
+
+            // Para edição/deleção/criação, só permitir no próprio setor
+            if (taskSector === req.user.sector) {
+              // Pode editar tarefas do próprio setor
+              return next();
+            } else {
+              // Não pode editar tarefas de outros setores
+              logger.permission(`${req.user.username} (${req.user.role}) tentou ${action} tarefa de outro setor (${taskSector})`);
+              return res.status(403).json({ 
+                error: 'Acesso negado',
+                message: `Supervisor de ${req.user.sector} não pode ${action} tarefas de outros setores`
+              });
+            }
+          }
+        }
+      }
+
+      next();
+    } catch (error) {
+      logger.error('Erro na verificação de permissão de tarefa por setor:', error.message);
+      return res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  };
+};
+
 // Middleware para registrar log de auditoria
 export const auditLog = (action, resource) => {
   return async (req, res, next) => {
@@ -101,7 +245,8 @@ export const auditLog = (action, resource) => {
                 method: req.method,
                 url: req.url,
                 body: req.body,
-                response: data
+                response: data,
+                userSector: req.user.sector
               }))
               .input('ipAddress', sql.NVarChar, req.ip || req.connection.remoteAddress)
               .input('userAgent', sql.NVarChar, req.headers['user-agent'])

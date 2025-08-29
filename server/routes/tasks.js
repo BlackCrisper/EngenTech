@@ -1,6 +1,6 @@
 import express from 'express';
 import { getConnection, sql } from '../config/database.js';
-import { authenticateToken, checkPermission, auditLog } from '../middleware/auth.js';
+import { authenticateToken, checkPermission, checkTaskSectorPermission, auditLog } from '../middleware/auth.js';
 import { logger } from '../config/logger.js';
 import upload from '../middleware/upload.js';
 
@@ -89,7 +89,7 @@ router.get('/equipment/:equipmentId', async (req, res) => {
 
 // Gerar tarefas para um equipamento
 router.post('/equipment/:equipmentId/generate', 
-  checkPermission('tasks', 'create'), 
+  checkTaskSectorPermission('create'), 
   auditLog('create', 'tasks'),
   async (req, res) => {
   try {
@@ -160,7 +160,7 @@ router.post('/equipment/:equipmentId/generate',
 
 // Criar tarefa personalizada
 router.post('/equipment/:equipmentId/custom',
-  checkPermission('tasks', 'create'),
+  checkTaskSectorPermission('create'),
   auditLog('create', 'tasks'),
   async (req, res) => {
   try {
@@ -204,7 +204,7 @@ router.post('/equipment/:equipmentId/custom',
 
 // Atualizar progresso de uma tarefa (sem fotos)
 router.put('/:taskId/progress', 
-  checkPermission('tasks', 'update'), 
+  checkTaskSectorPermission('update'), 
   auditLog('update', 'tasks'), 
   async (req, res) => {
   try {
@@ -250,7 +250,7 @@ router.put('/:taskId/progress',
 
 // Atualizar progresso de uma tarefa com fotos
 router.put('/:taskId/progress-with-photos', 
-  checkPermission('tasks', 'update'), 
+  checkTaskSectorPermission('update'), 
   auditLog('update', 'tasks'),
   upload.array('photos', 10),
   async (req, res) => {
@@ -401,7 +401,7 @@ router.get('/:taskId/photos', async (req, res) => {
 
 // Deletar registro de histórico de progresso
 router.delete('/:taskId/history/:historyId',
-  checkPermission('task-history', 'delete'),
+  checkTaskSectorPermission('delete'),
   auditLog('delete', 'task-history'),
   async (req, res) => {
   try {
@@ -458,7 +458,7 @@ router.delete('/:taskId/history/:historyId',
 
 // Deletar tarefa
 router.delete('/:taskId',
-  checkPermission('tasks', 'delete'),
+  checkTaskSectorPermission('delete'),
   auditLog('delete', 'tasks'),
   async (req, res) => {
   try {

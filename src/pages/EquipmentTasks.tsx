@@ -89,6 +89,41 @@ export default function EquipmentTasks() {
     return sectorToDisciplineMap[userSector] || sectorToDisciplineMap['other'];
   };
 
+  // Verificar se o usuário pode editar uma tarefa específica
+  const canEditTask = (task: EquipmentTask): boolean => {
+    // ADMIN pode editar qualquer tarefa
+    if (currentUser?.role === 'admin') {
+      return true;
+    }
+
+    // SUPERVISOR "all" pode editar qualquer tarefa
+    if (currentUser?.role === 'supervisor' && currentUser?.sector === 'all') {
+      return true;
+    }
+
+    // SUPERVISOR de setor específico só pode editar tarefas do próprio setor
+    if (currentUser?.role === 'supervisor' && currentUser?.sector !== 'all') {
+      const userSector = currentUser.sector;
+      const taskSector = getTaskSector(task.discipline);
+      return userSector === taskSector;
+    }
+
+    // Outros usuários seguem as permissões normais
+    return canUpdateTaskProgress();
+  };
+
+  // Mapear disciplina para setor
+  const getTaskSector = (discipline: string): string => {
+    const disciplineToSectorMap: { [key: string]: string } = {
+      'electrical': 'electrical',
+      'mechanical': 'mechanical',
+      'civil': 'civil',
+      'instrumentation': 'instrumentation',
+      'automation': 'automation'
+    };
+    return disciplineToSectorMap[discipline] || 'other';
+  };
+
   // Buscar dados do equipamento
   const { data: equipment } = useQuery({
     queryKey: ['equipment', equipmentId],
@@ -98,19 +133,14 @@ export default function EquipmentTasks() {
 
   // Buscar tarefas do equipamento
   const { data: tasks = [], isLoading } = useQuery({
-    queryKey: ['equipment-tasks', equipmentId, currentUser?.sector],
+    queryKey: ['equipment-tasks', equipmentId],
     queryFn: async () => {
       const allTasks = await tasksService.getEquipmentTasks(parseInt(equipmentId!));
       
-      // Filtrar tarefas baseado no setor do usuário
-      const allowedDisciplines = getUserAllowedDisciplines();
-      const filteredTasks = allTasks.filter((task: EquipmentTask) => 
-        allowedDisciplines.includes(task.discipline)
-      );
-      
-      return filteredTasks;
+      // Retornar todas as tarefas - o controle de permissão será feito nos botões de ação
+      return allTasks;
     },
-    enabled: !!equipmentId && !!currentUser
+    enabled: !!equipmentId
   });
 
   // Filtrar tarefas baseado nos filtros aplicados
@@ -137,19 +167,14 @@ export default function EquipmentTasks() {
 
   // Buscar tarefas padrão
   const { data: standardTasks = [] } = useQuery({
-    queryKey: ['standard-tasks', currentUser?.sector],
+    queryKey: ['standard-tasks'],
     queryFn: async () => {
       const allStandardTasks = await tasksService.getStandardTasks();
       
-      // Filtrar tarefas padrão baseado no setor do usuário
-      const allowedDisciplines = getUserAllowedDisciplines();
-      const filteredStandardTasks = allStandardTasks.filter((task: StandardTask) => 
-        allowedDisciplines.includes(task.discipline)
-      );
-      
-      return filteredStandardTasks;
+      // Retornar todas as tarefas padrão - o controle de permissão será feito nos botões de ação
+      return allStandardTasks;
     },
-    enabled: !!currentUser
+    enabled: true
   });
 
   // Gerar tarefas
@@ -423,21 +448,6 @@ export default function EquipmentTasks() {
         {/* Filtros */}
         <Card>
           <CardContent className="p-4">
-            {/* Indicador de filtro por setor */}
-            {currentUser?.sector && currentUser.sector !== 'all' && (
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-center text-blue-800">
-                  <Filter className="w-4 h-4 mr-2" />
-                  <span className="text-sm font-medium">
-                    Mostrando apenas tarefas do setor: <strong>{getSectorLabel(currentUser.sector)}</strong>
-                  </span>
-                </div>
-                <p className="text-xs text-blue-600 mt-1">
-                  Você só pode visualizar tarefas relacionadas ao seu setor de atuação.
-                </p>
-              </div>
-            )}
-            
             <div className="flex gap-4">
               <div className="flex-1">
                 <Label>Disciplina</Label>
@@ -447,11 +457,11 @@ export default function EquipmentTasks() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas as disciplinas</SelectItem>
-                    {getUserAllowedDisciplines().map((discipline) => (
-                      <SelectItem key={discipline} value={discipline}>
-                        {getDisciplineLabel(discipline)}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="electrical">Elétrica</SelectItem>
+                    <SelectItem value="mechanical">Mecânica</SelectItem>
+                    <SelectItem value="civil">Civil</SelectItem>
+                    <SelectItem value="instrumentation">Instrumentação</SelectItem>
+                    <SelectItem value="automation">Automação</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -547,7 +557,7 @@ export default function EquipmentTasks() {
 
                   <div className="flex justify-end space-x-2">
                          <UpdateGuard resource="tasks">
-                           {canUpdateTaskProgress() && (
+                           {canEditTask(task) && (
                              <>
                                <Button
                                  variant="outline"

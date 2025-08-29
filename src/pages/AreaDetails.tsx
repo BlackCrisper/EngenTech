@@ -141,19 +141,14 @@ export default function AreaDetails() {
 
   // Buscar tarefas do equipamento selecionado
   const { data: equipmentTasks = [], isLoading: tasksLoading } = useQuery({
-    queryKey: ['equipment-tasks', selectedEquipment?.id, user?.sector],
+    queryKey: ['equipment-tasks', selectedEquipment?.id],
     queryFn: async () => {
       const allTasks = await progressService.getEquipmentTasks(selectedEquipment!.id);
       
-      // Filtrar tarefas baseado no setor do usuário
-      const allowedDisciplines = getUserAllowedDisciplines();
-      const filteredTasks = allTasks.filter((task: any) => 
-        allowedDisciplines.includes(task.discipline)
-      );
-      
-      return filteredTasks;
+      // Retornar todas as tarefas - o controle de permissão será feito nos botões de ação
+      return allTasks;
     },
-    enabled: !!selectedEquipment?.id && !!user
+    enabled: !!selectedEquipment?.id
   });
 
   // Usar diretamente as tarefas filtradas pela query
