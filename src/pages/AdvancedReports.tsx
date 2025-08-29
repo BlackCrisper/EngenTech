@@ -282,8 +282,6 @@ export default function AdvancedReports() {
                        <Progress value={progressOverview.averageProgress} className="mt-2" />
                      </CardContent>
                    </Card>
-
-
                  </div>
 
                 {/* Progresso por Tipo de Tarefa */}

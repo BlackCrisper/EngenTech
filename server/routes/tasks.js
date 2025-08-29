@@ -456,12 +456,30 @@ router.delete('/:taskId', checkPermission('tasks', 'delete'), auditLog('delete',
       });
     }
 
-    // 3. Não permitir deletar tarefas padrão (não customizadas)
+    // 3. Verificar permissão para deletar tarefas padrão
     if (!task.isCustom) {
-      return res.status(400).json({ 
-        error: 'Não é possível deletar uma tarefa padrão do sistema',
-        details: `A tarefa "${task.name}" é uma tarefa padrão do sistema e não pode ser deletada.`
-      });
+      // Verificar se o usuário tem permissão específica para deletar tarefas padrão
+      const standardTaskPermission = await pool.request()
+        .input('role', sql.NVarChar, req.user.role)
+        .input('resource', sql.NVarChar, 'standard-tasks')
+        .input('action', sql.NVarChar, 'delete')
+        .query(`
+          SELECT COUNT(*) as hasPermission
+          FROM RolePermissions rp
+          JOIN Permissions p ON rp.permissionId = p.id
+          WHERE rp.role = @role 
+            AND p.resource = @resource 
+            AND p.action = @action
+            AND rp.granted = 1
+        `);
+
+      if (standardTaskPermission.recordset[0].hasPermission === 0) {
+        return res.status(403).json({ 
+          error: 'Acesso negado',
+          message: `Você não tem permissão para deletar tarefas padrão do sistema`,
+          details: `A tarefa "${task.name}" é uma tarefa padrão do sistema. Apenas administradores podem deletar tarefas padrão.`
+        });
+      }
     }
 
     // 4. Verificar se há fotos/documentos anexados
