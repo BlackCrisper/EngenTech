@@ -265,23 +265,23 @@ export default function Equipment() {
   };
 
   const getProgressColor = (progress: number) => {
-    if (progress >= 80) return 'text-green-600';
-    if (progress >= 50) return 'text-yellow-600';
-    return 'text-red-600';
+    if (progress >= 80) return 'text-primary';
+    if (progress >= 50) return 'text-foreground';
+    return 'text-muted-foreground';
   };
 
   const getProgressBarColor = (progress: number) => {
-    if (progress >= 80) return 'bg-green-500';
-    if (progress >= 50) return 'bg-yellow-500';
-    return 'bg-red-500';
+    if (progress >= 80) return 'bg-primary';
+    if (progress >= 50) return 'bg-foreground/20';
+    return 'bg-muted';
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800 border-green-200';
-      case 'inactive': return 'bg-gray-100 text-gray-800 border-gray-200';
-      case 'maintenance': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'active': return 'bg-primary/10 text-primary border-primary/20';
+      case 'inactive': return 'bg-muted text-muted-foreground border-border';
+      case 'maintenance': return 'bg-primary/10 text-primary border-primary/20';
+      default: return 'bg-muted text-muted-foreground border-border';
     }
   };
 
@@ -318,28 +318,28 @@ export default function Equipment() {
     const area = areas.find(a => a.id === child.areaId);
     
     return (
-      <Card key={child.id} className="ml-8 border-l-2 border-blue-200 bg-blue-50/30">
+      <Card key={child.id} className="ml-8 border-l-2 border-border bg-muted/30">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <CardTitle className="text-base font-semibold text-blue-800">{child.equipmentTag}</CardTitle>
+                <CardTitle className="text-base font-semibold text-foreground">{child.equipmentTag}</CardTitle>
                 <Badge variant="outline" className={getStatusColor(child.status)}>
                   {child.status === 'active' ? 'Ativo' : child.status === 'inactive' ? 'Inativo' : 'Manutenção'}
                 </Badge>
-                <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
                   Filho
                 </Badge>
               </div>
-              <h3 className="text-sm font-medium text-gray-800 mb-1">{child.name}</h3>
+              <h3 className="text-sm font-medium text-foreground mb-1">{child.name}</h3>
               {area && (
-                <div className="flex items-center text-xs text-gray-600 mb-2">
+                <div className="flex items-center text-xs text-muted-foreground mb-2">
                   <MapPin className="w-3 h-3 mr-1" />
                   {area.name}
                 </div>
               )}
               {child.description && (
-                <p className="text-xs text-gray-600 line-clamp-2">{child.description}</p>
+                <p className="text-xs text-muted-foreground line-clamp-2">{child.description}</p>
               )}
             </div>
           </div>
@@ -348,13 +348,13 @@ export default function Equipment() {
         <CardContent className="pt-0">
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-xs font-medium text-gray-600">Progresso:</span>
+              <span className="text-xs font-medium text-muted-foreground">Progresso:</span>
               <span className={`text-xs font-bold ${getProgressColor(child.averageProgress)}`}>
                 {child.averageProgress}%
               </span>
             </div>
             
-            <div className="flex gap-2 pt-2 border-t border-blue-100">
+            <div className="flex gap-2 pt-2 border-t border-border">
               <Button
                 variant="outline"
                 size="sm"
@@ -381,7 +381,7 @@ export default function Equipment() {
                   size="sm"
                   onClick={() => handleDelete(child)}
                   disabled={deleteMutation.isPending}
-                  className="flex-1 text-xs text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+                  className="flex-1 text-xs text-muted-foreground hover:text-foreground border-border hover:border-foreground/20"
                 >
                   <Trash2 className="w-3 h-3 mr-1" />
                   Excluir
@@ -406,7 +406,7 @@ export default function Equipment() {
       <Collapsible key={parent.id} open={isExpanded} onOpenChange={() => toggleParentExpansion(parent.id)}>
         <Card className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20">
           <CollapsibleTrigger asChild>
-            <CardHeader className="pb-3 cursor-pointer hover:bg-gray-50 transition-colors">
+            <CardHeader className="pb-3 cursor-pointer hover:bg-muted transition-colors">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
@@ -414,24 +414,24 @@ export default function Equipment() {
                     <Badge variant="outline" className={getStatusColor(parent.status)}>
                       {parent.status === 'active' ? 'Ativo' : parent.status === 'inactive' ? 'Inativo' : 'Manutenção'}
                     </Badge>
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                    <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
                       Pai
                     </Badge>
                     {childrenCount > 0 && (
-                      <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                         {childrenCount} filho{childrenCount > 1 ? 's' : ''}
                       </Badge>
                     )}
                   </div>
-                  <h3 className="text-base font-semibold text-gray-800 mb-1">{parent.name}</h3>
+                  <h3 className="text-base font-semibold text-foreground mb-1">{parent.name}</h3>
                   {area && (
-                    <div className="flex items-center text-sm text-gray-600 mb-2">
+                    <div className="flex items-center text-sm text-muted-foreground mb-2">
                       <MapPin className="w-3 h-3 mr-1" />
                       {area.name}
                     </div>
                   )}
                   {parent.description && (
-                    <p className="text-sm text-gray-600 line-clamp-2">{parent.description}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{parent.description}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
@@ -451,7 +451,7 @@ export default function Equipment() {
                       <DeleteGuard resource="equipment">
                         <DropdownMenuItem 
                           onClick={() => handleDelete(parent)}
-                          className="text-red-600 focus:text-red-600"
+                          className="text-muted-foreground focus:text-foreground"
                         >
                           <Trash2 className="w-4 h-4 mr-2" />
                           Excluir
@@ -460,9 +460,9 @@ export default function Equipment() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                   {isExpanded ? (
-                    <ChevronDown className="w-5 h-5 text-gray-500" />
+                    <ChevronDown className="w-5 h-5 text-muted-foreground" />
                   ) : (
-                    <ChevronRight className="w-5 h-5 text-gray-500" />
+                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
                   )}
                 </div>
               </div>
@@ -473,7 +473,7 @@ export default function Equipment() {
             <div className="space-y-3">
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-600">Progresso Médio:</span>
+                  <span className="text-sm font-medium text-muted-foreground">Progresso Médio:</span>
                   <span className={`text-sm font-bold ${getProgressColor(parentProgress)}`}>
                     {parentProgress}%
                   </span>
@@ -487,8 +487,8 @@ export default function Equipment() {
             <div className="px-6 pb-6 space-y-4">
               {childrenCount > 0 ? (
                 <>
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <h4 className="text-sm font-semibold text-gray-700">Equipamentos Filhos</h4>
+                  <div className="flex items-center justify-between pt-4 border-t border-border">
+                    <h4 className="text-sm font-semibold text-foreground">Equipamentos Filhos</h4>
                     <CreateGuard resource="equipment">
                       <Button
                         variant="outline"
@@ -506,9 +506,9 @@ export default function Equipment() {
                   </div>
                 </>
               ) : (
-                <div className="pt-4 border-t border-gray-100">
+                <div className="pt-4 border-t border-border">
                   <div className="text-center py-4">
-                    <p className="text-sm text-gray-500 mb-3">Nenhum equipamento filho</p>
+                    <p className="text-sm text-muted-foreground mb-3">Nenhum equipamento filho</p>
                     <CreateGuard resource="equipment">
                       <Button
                         variant="outline"
@@ -621,8 +621,8 @@ export default function Equipment() {
         <div className="space-y-4">
           {/* Indicador de filtro por setor */}
           {currentUser?.sector && currentUser.sector !== 'all' && (
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center text-blue-800">
+            <div className="p-4 bg-muted border border-border rounded-lg">
+              <div className="flex items-center text-foreground">
                 <Filter className="w-4 h-4 mr-2" />
                 <span className="text-sm font-medium">
                   Mostrando equipamentos do setor: <strong>{getSectorLabel(currentUser.sector)}</strong>
@@ -634,7 +634,7 @@ export default function Equipment() {
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
                   placeholder="Buscar equipamentos por tag, nome ou descrição..."
                   value={searchTerm}
@@ -666,12 +666,12 @@ export default function Equipment() {
             {[...Array(3)].map((_, i) => (
               <Card key={i} className="animate-pulse">
                 <CardHeader>
-                  <div className="h-5 bg-gray-200 rounded w-2/3 mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-5 bg-muted rounded w-2/3 mb-2"></div>
+                  <div className="h-4 bg-muted rounded w-1/2"></div>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                  <div className="h-4 bg-muted rounded w-full mb-2"></div>
+                  <div className="h-4 bg-muted rounded w-2/3"></div>
                 </CardContent>
               </Card>
             ))}
@@ -679,9 +679,9 @@ export default function Equipment() {
         ) : filteredEquipment.length === 0 ? (
           <Card className="shadow-lg">
             <CardContent className="p-12 text-center">
-              <Settings className="w-16 h-16 mx-auto text-gray-400 mb-6" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Nenhum equipamento encontrado</h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+              <Settings className="w-16 h-16 mx-auto text-muted-foreground mb-6" />
+              <h3 className="text-xl font-semibold text-foreground mb-3">Nenhum equipamento encontrado</h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 {searchTerm || areaFilter !== 'all'
                   ? 'Não há equipamentos que correspondam aos filtros aplicados.'
                   : 'Comece criando seu primeiro equipamento pai para gerenciar o sistema.'
@@ -721,35 +721,35 @@ export default function Equipment() {
                   className={
                     formData.equipmentTag && formData.parentTag && 
                     !formData.equipmentTag.startsWith(formData.parentTag) 
-                      ? 'border-red-500 focus:border-red-500' 
+                      ? 'border-destructive focus:border-destructive' 
                       : formData.equipmentTag && formData.parentTag && 
                         formData.equipmentTag.startsWith(formData.parentTag) && 
                         formData.equipmentTag.length > formData.parentTag.length
-                        ? 'border-green-500 focus:border-green-500'
+                        ? 'border-primary focus:border-primary'
                         : ''
                   }
                 />
                 {formData.equipmentTag && formData.parentTag && (
                   <div className="mt-1 text-xs">
                     {!formData.equipmentTag.startsWith(formData.parentTag) ? (
-                      <span className="text-red-600 flex items-center gap-1">
+                      <span className="text-muted-foreground flex items-center gap-1">
                         <XCircle className="w-3 h-3" />
                         O TAG deve começar com "{formData.parentTag}"
                       </span>
                     ) : formData.equipmentTag.length <= formData.parentTag.length ? (
-                      <span className="text-red-600 flex items-center gap-1">
+                      <span className="text-muted-foreground flex items-center gap-1">
                         <XCircle className="w-3 h-3" />
                         O TAG deve ter pelo menos um caractere adicional após "{formData.parentTag}"
                       </span>
                     ) : (
-                      <span className="text-green-600 flex items-center gap-1">
+                      <span className="text-primary flex items-center gap-1">
                         <CheckCircle className="w-3 h-3" />
                         Formato correto! Exemplo: {formData.parentTag}M1, {formData.parentTag}SUB1
                       </span>
                     )}
                   </div>
                 )}
-                <div className="mt-1 text-xs text-gray-500">
+                <div className="mt-1 text-xs text-muted-foreground">
                   Exemplo: Se o pai é "{selectedParentForChild?.equipmentTag}", o filho pode ser "{selectedParentForChild?.equipmentTag}M1"
                 </div>
               </div>
@@ -861,7 +861,7 @@ export default function Equipment() {
                     id="edit-isParent"
                     checked={formData.isParent}
                     onChange={(e) => setFormData({ ...formData, isParent: e.target.checked, parentTag: e.target.checked ? undefined : formData.parentTag })}
-                    className="rounded border-gray-300"
+                    className="rounded border-border"
                     aria-label="É um equipamento pai"
                   />
                   <Label htmlFor="edit-isParent">É um equipamento pai</Label>

@@ -196,19 +196,19 @@ export default function Areas() {
   const areasWithLowProgress = areas.filter(area => area.averageProgress < 50).length;
 
   const getStatusColor = (status: string) => {
-    return status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+    return status === 'active' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground';
   };
 
   const getProgressColor = (progress: number) => {
-    if (progress >= 80) return 'text-green-600';
-    if (progress >= 50) return 'text-yellow-600';
-    return 'text-red-600';
+    if (progress >= 80) return 'text-primary';
+    if (progress >= 50) return 'text-foreground';
+    return 'text-muted-foreground';
   };
 
   const getProgressBarColor = (progress: number) => {
-    if (progress >= 80) return 'bg-green-500';
-    if (progress >= 50) return 'bg-yellow-500';
-    return 'bg-red-500';
+    if (progress >= 80) return 'bg-primary';
+    if (progress >= 50) return 'bg-foreground/20';
+    return 'bg-muted';
   };
 
   return (
@@ -217,8 +217,8 @@ export default function Areas() {
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Gerenciamento de Áreas</h1>
-            <p className="text-gray-600">Organize e monitore as áreas do projeto</p>
+            <h1 className="text-3xl font-bold text-foreground">Gerenciamento de Áreas</h1>
+            <p className="text-muted-foreground">Organize e monitore as áreas do projeto</p>
           </div>
           
           <CreateGuard resource="areas">
@@ -290,7 +290,7 @@ export default function Areas() {
                   <p className="text-sm font-medium text-muted-foreground">Total de Áreas</p>
                   <p className="text-2xl font-bold">{totalAreas}</p>
                 </div>
-                <Building2 className="h-8 w-8 text-blue-500" />
+                <Building2 className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -302,7 +302,7 @@ export default function Areas() {
                   <p className="text-sm font-medium text-muted-foreground">Áreas Ativas</p>
                   <p className="text-2xl font-bold">{activeAreas}</p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-green-500" />
+                <CheckCircle className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -314,7 +314,7 @@ export default function Areas() {
                   <p className="text-sm font-medium text-muted-foreground">Progresso Médio</p>
                   <p className="text-2xl font-bold">{averageProgress}%</p>
                 </div>
-                <TrendingUp className="h-8 w-8 text-orange-500" />
+                <TrendingUp className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -326,7 +326,7 @@ export default function Areas() {
                   <p className="text-sm font-medium text-muted-foreground">Áreas com Baixo Progresso</p>
                   <p className="text-2xl font-bold">{areasWithLowProgress}</p>
                 </div>
-                <AlertTriangle className="h-8 w-8 text-red-500" />
+                <AlertTriangle className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -337,14 +337,14 @@ export default function Areas() {
           <CardContent className="p-4">
             {/* Indicador de filtro por setor */}
             {currentUser?.sector && currentUser.sector !== 'all' && (
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-center text-blue-800">
+              <div className="mb-4 p-3 bg-muted border border-border rounded-lg">
+                <div className="flex items-center text-foreground">
                   <Filter className="w-4 h-4 mr-2" />
                   <span className="text-sm font-medium">
                     Mostrando áreas do setor: <strong>{getSectorLabel(currentUser.sector)}</strong>
                   </span>
                 </div>
-                <p className="text-xs text-blue-600 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Você só pode visualizar áreas relacionadas ao seu setor de atuação.
                 </p>
               </div>
@@ -353,7 +353,7 @@ export default function Areas() {
             <div className="flex gap-4">
               <div className="flex-1">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                   <Input
                     placeholder="Buscar áreas..."
                     value={searchTerm}
@@ -383,11 +383,11 @@ export default function Areas() {
             {[...Array(6)].map((_, i) => (
               <Card key={i} className="animate-pulse">
                 <CardHeader>
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-4 bg-muted rounded w-3/4"></div>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                  <div className="h-3 bg-muted rounded w-full mb-2"></div>
+                  <div className="h-3 bg-muted rounded w-2/3"></div>
                 </CardContent>
               </Card>
             ))}
@@ -405,12 +405,12 @@ export default function Areas() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600 mb-4 line-clamp-2">{area.description}</p>
+                  <p className="text-muted-foreground mb-4 line-clamp-2">{area.description}</p>
                   
                   {/* Progresso */}
                   <div className="space-y-3 mb-4">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Progresso Médio:</span>
+                      <span className="text-muted-foreground">Progresso Médio:</span>
                       <span className={`font-medium ${getProgressColor(area.averageProgress)}`}>
                         {area.averageProgress}%
                       </span>
@@ -427,17 +427,17 @@ export default function Areas() {
                   {/* Estatísticas */}
                   <div className="space-y-2 mb-4">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Equipamentos:</span>
+                      <span className="text-muted-foreground">Equipamentos:</span>
                       <span className="font-medium">{area.equipmentCount}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Criada em:</span>
+                      <span className="text-muted-foreground">Criada em:</span>
                       <span className="font-medium">
                         {new Date(area.createdAt).toLocaleDateString('pt-BR')}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Última atualização:</span>
+                      <span className="text-muted-foreground">Última atualização:</span>
                       <span className="font-medium">
                         {new Date(area.updatedAt).toLocaleDateString('pt-BR')}
                       </span>

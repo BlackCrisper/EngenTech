@@ -234,15 +234,15 @@ export default function AreaDetails() {
   };
 
   const getProgressColor = (progress: number) => {
-    if (progress >= 80) return 'text-green-600';
-    if (progress >= 50) return 'text-yellow-600';
-    return 'text-red-600';
+    if (progress >= 80) return 'text-primary';
+    if (progress >= 50) return 'text-foreground';
+    return 'text-muted-foreground';
   };
 
   const getProgressBarColor = (progress: number) => {
-    if (progress >= 80) return 'bg-green-500';
-    if (progress >= 50) return 'bg-yellow-500';
-    return 'bg-red-500';
+    if (progress >= 80) return 'bg-primary';
+    if (progress >= 50) return 'bg-foreground/20';
+    return 'bg-muted';
   };
 
   const getDisciplineLabel = (discipline: string) => {
@@ -256,10 +256,10 @@ export default function AreaDetails() {
 
   const getDisciplineColor = (discipline: string) => {
     switch (discipline) {
-      case 'electrical': return 'bg-blue-100 text-blue-800';
-      case 'mechanical': return 'bg-orange-100 text-orange-800';
-      case 'civil': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'electrical': return 'bg-primary/10 text-primary';
+      case 'mechanical': return 'bg-primary/10 text-primary';
+      case 'civil': return 'bg-primary/10 text-primary';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -274,10 +274,10 @@ export default function AreaDetails() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'in-progress': return 'bg-blue-100 text-blue-800';
-      case 'pending': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'completed': return 'bg-primary/10 text-primary';
+      case 'in-progress': return 'bg-primary/10 text-primary';
+      case 'pending': return 'bg-muted text-muted-foreground';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -285,14 +285,14 @@ export default function AreaDetails() {
     return (
       <MainLayout>
         <div className="space-y-6">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="h-48 bg-gray-200 rounded"></div>
-              ))}
-            </div>
+                  <div className="animate-pulse">
+          <div className="h-8 bg-muted rounded w-1/3 mb-4"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-48 bg-muted rounded"></div>
+            ))}
           </div>
+        </div>
         </div>
       </MainLayout>
     );
@@ -327,11 +327,11 @@ export default function AreaDetails() {
               Voltar
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{area.name}</h1>
-              <p className="text-gray-600">{area.description}</p>
+              <h1 className="text-3xl font-bold text-foreground">{area.name}</h1>
+              <p className="text-muted-foreground">{area.description}</p>
             </div>
           </div>
-          <Badge className={area.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+          <Badge className={area.status === 'active' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}>
             {area.status === 'active' ? 'Ativa' : 'Inativa'}
           </Badge>
         </div>
@@ -347,7 +347,7 @@ export default function AreaDetails() {
                     {area.averageProgress}%
                   </p>
                 </div>
-                <TrendingUp className="h-8 w-8 text-blue-500" />
+                <TrendingUp className="h-8 w-8 text-muted-foreground" />
               </div>
               <Progress 
                 value={area.averageProgress} 
@@ -366,7 +366,7 @@ export default function AreaDetails() {
                   <p className="text-sm font-medium text-muted-foreground">Equipamentos</p>
                   <p className="text-2xl font-bold">{area.equipmentCount}</p>
                 </div>
-                <Wrench className="h-8 w-8 text-orange-500" />
+                <Wrench className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -376,11 +376,11 @@ export default function AreaDetails() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Completados</p>
-                  <p className="text-2xl font-bold text-green-600">
+                  <p className="text-2xl font-bold text-primary">
                     {Math.round((area.averageProgress / 100) * area.equipmentCount)}
                   </p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-green-500" />
+                <CheckCircle className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -390,11 +390,11 @@ export default function AreaDetails() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Pendentes</p>
-                  <p className="text-2xl font-bold text-red-600">
+                  <p className="text-2xl font-bold text-muted-foreground">
                     {area.equipmentCount - Math.round((area.averageProgress / 100) * area.equipmentCount)}
                   </p>
                 </div>
-                <Clock className="h-8 w-8 text-red-500" />
+                <Clock className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -419,7 +419,7 @@ export default function AreaDetails() {
                 {organizedEquipment.map((parent) => (
                   <div key={parent.id} className="border rounded-lg">
                     {/* Equipamento Pai */}
-                    <div className="p-4 bg-gray-50 border-b">
+                    <div className="p-4 bg-muted border-b">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <Button
@@ -460,7 +460,7 @@ export default function AreaDetails() {
                     {expandedParents.has(parent.id) && parent.children && (
                       <div className="p-4 space-y-3">
                         {parent.children.map((child) => (
-                          <div key={child.id} className="flex items-center justify-between p-3 bg-white border rounded-lg">
+                          <div key={child.id} className="flex items-center justify-between p-3 bg-background border rounded-lg">
                             <div className="flex-1">
                               <div className="flex items-center gap-3">
                                 <div>
@@ -537,7 +537,7 @@ export default function AreaDetails() {
                 {/* Lista de Tarefas */}
                 {tasksLoading ? (
                   <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                     <p className="text-sm text-muted-foreground mt-2">Carregando tarefas...</p>
                   </div>
                 ) : filteredTasks.length === 0 ? (
