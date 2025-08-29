@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit, Trash2, Search, Filter, Wrench, MapPin, Settings, ChevronDown, ChevronRight, MoreVertical } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Filter, Wrench, MapPin, Settings, ChevronDown, ChevronRight, MoreVertical, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CapslockInput } from '@/components/ui/capslock-input';
@@ -732,16 +732,19 @@ export default function Equipment() {
                 {formData.equipmentTag && formData.parentTag && (
                   <div className="mt-1 text-xs">
                     {!formData.equipmentTag.startsWith(formData.parentTag) ? (
-                      <span className="text-red-600">
-                        ❌ O TAG deve começar com "{formData.parentTag}"
+                      <span className="text-red-600 flex items-center gap-1">
+                        <XCircle className="w-3 h-3" />
+                        O TAG deve começar com "{formData.parentTag}"
                       </span>
                     ) : formData.equipmentTag.length <= formData.parentTag.length ? (
-                      <span className="text-red-600">
-                        ❌ O TAG deve ter pelo menos um caractere adicional após "{formData.parentTag}"
+                      <span className="text-red-600 flex items-center gap-1">
+                        <XCircle className="w-3 h-3" />
+                        O TAG deve ter pelo menos um caractere adicional após "{formData.parentTag}"
                       </span>
                     ) : (
-                      <span className="text-green-600">
-                        ✅ Formato correto! Exemplo: {formData.parentTag}M1, {formData.parentTag}SUB1
+                      <span className="text-green-600 flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3" />
+                        Formato correto! Exemplo: {formData.parentTag}M1, {formData.parentTag}SUB1
                       </span>
                     )}
                   </div>

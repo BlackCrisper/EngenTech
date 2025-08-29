@@ -19,37 +19,37 @@ const shouldLog = (level) => {
 export const logger = {
   error: (message, ...args) => {
     if (shouldLog('ERROR')) {
-      console.error(`❌ ${message}`, ...args);
+      console.error(`[ERROR] ${message}`, ...args);
     }
   },
   
   warn: (message, ...args) => {
     if (shouldLog('WARN')) {
-      console.warn(`⚠️  ${message}`, ...args);
+      console.warn(`[WARN] ${message}`, ...args);
     }
   },
   
   info: (message, ...args) => {
     if (shouldLog('INFO')) {
-      console.log(`ℹ️  ${message}`, ...args);
+      console.log(`[INFO] ${message}`, ...args);
     }
   },
   
   debug: (message, ...args) => {
     if (shouldLog('DEBUG')) {
-      console.log(`🔍 ${message}`, ...args);
+      console.log(`[DEBUG] ${message}`, ...args);
     }
   },
   
   success: (message, ...args) => {
     if (shouldLog('INFO')) {
-      console.log(`✅ ${message}`, ...args);
+      console.log(`[SUCCESS] ${message}`, ...args);
     }
   },
   
   auth: (message, ...args) => {
     if (shouldLog('INFO')) {
-      console.log(`🔐 ${message}`, ...args);
+      console.log(`[AUTH] ${message}`, ...args);
     }
   },
   

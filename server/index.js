@@ -12,15 +12,15 @@ const __dirname = path.dirname(__filename);
 // Carregar variáveis de ambiente do arquivo .env no diretório principal
 const envPath = path.join(__dirname, '..', '.env');
 dotenv.config({ path: envPath });
-console.log('📁 Caminho do .env:', envPath);
+console.log('[INFO] Caminho do .env:', envPath);
 
 // Verificar se o arquivo foi carregado
 if (fs.existsSync(envPath)) {
-  console.log('✅ Arquivo .env encontrado');
+  console.log('[SUCCESS] Arquivo .env encontrado');
   const envContent = fs.readFileSync(envPath, 'utf8');
-  console.log('📄 Conteúdo do .env:', envContent);
+  console.log('[INFO] Conteúdo do .env:', envContent);
 } else {
-  console.log('❌ Arquivo .env não encontrado');
+  console.log('[ERROR] Arquivo .env não encontrado');
 }
 
 const app = express();
@@ -81,7 +81,7 @@ app.get('/api/health', (req, res) => {
 
 // Middleware de tratamento de erros
 app.use((err, req, res, next) => {
-  console.error('❌ Erro na API:', err);
+  console.error('[ERROR] Erro na API:', err);
   res.status(500).json({ 
     error: 'Erro interno do servidor',
     message: process.env.NODE_ENV === 'development' ? err.message : 'Algo deu errado'
@@ -95,22 +95,22 @@ app.use('*', (req, res) => {
 
 // Iniciar servidor
 const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Servidor EnginSync rodando na porta ${PORT}`);
-  console.log(`📊 API disponível em: http://localhost:${PORT}/api`);
-  console.log(`🌐 API disponível em: http://0.0.0.0:${PORT}/api`);
-  console.log(`🏥 Health check: http://localhost:${PORT}/api/health`);
+  console.log(`[SUCCESS] Servidor EnginSync rodando na porta ${PORT}`);
+  console.log(`[INFO] API disponível em: http://localhost:${PORT}/api`);
+  console.log(`[INFO] API disponível em: http://0.0.0.0:${PORT}/api`);
+  console.log(`[INFO] Health check: http://localhost:${PORT}/api/health`);
 });
 
 // Tratamento de erros do servidor
 server.on('error', (error) => {
-  console.error('❌ Erro no servidor:', error);
+  console.error('[ERROR] Erro no servidor:', error);
 });
 
 // Manter o processo rodando
 process.on('SIGINT', () => {
-  console.log('\n🛑 Servidor sendo encerrado...');
+  console.log('\n[INFO] Servidor sendo encerrado...');
   server.close(() => {
-    console.log('✅ Servidor encerrado');
+    console.log('[SUCCESS] Servidor encerrado');
     process.exit(0);
   });
 });

@@ -37,7 +37,8 @@ import {
   Trash2,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  AlertOctagon
 } from 'lucide-react';
 import { 
   sesmtService, 
@@ -130,8 +131,8 @@ const SESMT: React.FC = () => {
       });
     },
     onError: (error) => {
-      console.error('❌ Erro ao criar ocorrência:', error);
-      console.error('📋 Detalhes do erro:', error.response?.data);
+      console.error('Erro ao criar ocorrência:', error);
+      console.error('Detalhes do erro:', error.response?.data);
       
       const errorMessage = error.response?.data?.error || 'Erro ao registrar ocorrência';
       const missingFields = error.response?.data?.missingFields;

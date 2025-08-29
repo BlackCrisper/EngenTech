@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { LucideIcon } from "lucide-react";
+import { LucideIcon, TrendingUp, TrendingDown } from "lucide-react";
 
 interface MetricCardProps {
   title: string;
@@ -48,7 +48,12 @@ export const MetricCard = ({
                   ? "text-success bg-success/10" 
                   : "text-destructive bg-destructive/10"
               )}>
-                <span>{trend.isPositive !== false ? "↗" : "↘"} {Math.abs(trend.value)}%</span>
+                {trend.isPositive !== false ? (
+                  <TrendingUp className="h-3 w-3" />
+                ) : (
+                  <TrendingDown className="h-3 w-3" />
+                )}
+                <span>{Math.abs(trend.value)}%</span>
                 <span className="text-muted-foreground">{trend.label}</span>
               </div>
             )}

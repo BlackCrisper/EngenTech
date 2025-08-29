@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { History, Calendar, User, Image as ImageIcon, Clock, FileText, Trash2 } from 'lucide-react';
+import { History, Calendar, User, Image as ImageIcon, Clock, FileText, Trash2, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 import { tasksService } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -100,9 +100,9 @@ export default function TaskHistoryModal({
   };
 
   const getProgressChangeIcon = (previous: number, current: number) => {
-    if (current > previous) return '↗️';
-    if (current < previous) return '↘️';
-    return '→';
+    if (current > previous) return <TrendingUp className="w-4 h-4 text-green-600" />;
+    if (current < previous) return <TrendingDown className="w-4 h-4 text-red-600" />;
+    return <ArrowRight className="w-4 h-4 text-gray-600" />;
   };
 
   const handleDeleteHistory = async (historyId: number) => {
@@ -248,7 +248,7 @@ export default function TaskHistoryModal({
                         <Badge variant="outline" className="text-xs">
                           {getStatusText(entry.previousStatus)}
                         </Badge>
-                        <span>→</span>
+                        <ArrowRight className="w-4 h-4 text-gray-500" />
                         <Badge className={getStatusColor(entry.newStatus)}>
                           {getStatusText(entry.newStatus)}
                         </Badge>
