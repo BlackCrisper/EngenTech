@@ -159,9 +159,17 @@ export interface TaskHistory {
   previousStatus?: string;
   newStatus?: string;
   observations?: string;
-  photos?: string;
+  photos?: Array<{
+    fileName: string;
+    filePath: string;
+    fileSize: number;
+    mimeType: string;
+  }>;
   createdAt: string;
-  userName: string;
+  updatedAt?: string;
+  userName?: string;
+  updatedBy?: string;
+  historyId?: number;
 }
 
 // Serviços de Autenticação

@@ -19,13 +19,15 @@ import {
   CheckCircle,
   Play,
   Pause,
-  Building2
+  Building2,
+  History
 } from "lucide-react";
 import { equipmentService, tasksService, progressService } from "@/services/api";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { UpdateProgressModal } from "@/components/tasks/UpdateProgressModal";
+import TaskHistoryModal from "@/components/tasks/TaskHistoryModal";
 
 const OperatorTasks = () => {
   const { equipmentId } = useParams();
@@ -34,6 +36,7 @@ const OperatorTasks = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTask, setSelectedTask] = useState(null);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
   // Buscar dados do equipamento
   const { data: equipment, isLoading: equipmentLoading } = useQuery({
@@ -303,7 +306,22 @@ const OperatorTasks = () => {
                         )}
                       </div>
                       
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedTask({...task, equipmentId: equipment.id});
+                            setIsHistoryModalOpen(true);
+                          }}
+                          className="text-xs"
+                        >
+                          <History className="h-3 w-3 mr-1" />
+                          Histórico
+                        </Button>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -326,6 +344,18 @@ const OperatorTasks = () => {
               // Recarregar dados após atualização
               window.location.reload();
             }}
+          />
+        )}
+
+        {/* Modal de Histórico */}
+        {selectedTask && (
+          <TaskHistoryModal
+            isOpen={isHistoryModalOpen}
+            onClose={() => {
+              setIsHistoryModalOpen(false);
+              setSelectedTask(null);
+            }}
+            task={selectedTask}
           />
         )}
       </div>

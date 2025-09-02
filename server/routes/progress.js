@@ -459,7 +459,7 @@ router.post('/update', upload.array('photos', 10), async (req, res) => {
       const previousProgress = taskResult.recordset[0].currentProgress;
 
       // Inserir no histórico
-      await pool.request()
+      const historyResult = await pool.request()
         .input('taskId', sql.Int, taskIdToUpdate)
         .input('userId', sql.Int, decoded.userId)
         .input('action', sql.NVarChar, 'updated')
@@ -468,8 +468,29 @@ router.post('/update', upload.array('photos', 10), async (req, res) => {
         .input('observations', sql.NVarChar, observations)
         .query(`
           INSERT INTO TaskHistory (taskId, userId, action, previousProgress, newProgress, observations)
+          OUTPUT INSERTED.id
           VALUES (@taskId, @userId, @action, @previousProgress, @newProgress, @observations)
         `);
+
+      const historyId = historyResult.recordset[0].id;
+
+      // Salvar fotos se houver
+      if (req.files && req.files.length > 0) {
+        for (const file of req.files) {
+          await pool.request()
+            .input('taskId', sql.Int, taskIdToUpdate)
+            .input('historyId', sql.Int, historyId)
+            .input('fileName', sql.NVarChar, file.originalname)
+            .input('filePath', sql.NVarChar, file.path)
+            .input('fileSize', sql.Int, file.size)
+            .input('mimeType', sql.NVarChar, file.mimetype)
+            .input('uploadedBy', sql.Int, decoded.userId)
+            .query(`
+              INSERT INTO TaskPhotos (taskId, historyId, fileName, filePath, fileSize, mimeType, uploadedBy)
+              VALUES (@taskId, @historyId, @fileName, @filePath, @fileSize, @mimeType, @uploadedBy)
+            `);
+        }
+      }
 
       // Atualizar tarefa específica
       await pool.request()
@@ -500,7 +521,7 @@ router.post('/update', upload.array('photos', 10), async (req, res) => {
       const newTaskId = result.recordset[0].id;
 
       // Inserir no histórico
-      await pool.request()
+      const historyResult = await pool.request()
         .input('taskId', sql.Int, newTaskId)
         .input('userId', sql.Int, decoded.userId)
         .input('action', sql.NVarChar, 'created')
@@ -508,8 +529,29 @@ router.post('/update', upload.array('photos', 10), async (req, res) => {
         .input('observations', sql.NVarChar, observations)
         .query(`
           INSERT INTO TaskHistory (taskId, userId, action, newProgress, observations)
+          OUTPUT INSERTED.id
           VALUES (@taskId, @userId, @action, @newProgress, @observations)
         `);
+
+      const historyId = historyResult.recordset[0].id;
+
+      // Salvar fotos se houver
+      if (req.files && req.files.length > 0) {
+        for (const file of req.files) {
+          await pool.request()
+            .input('taskId', sql.Int, newTaskId)
+            .input('historyId', sql.Int, historyId)
+            .input('fileName', sql.NVarChar, file.originalname)
+            .input('filePath', sql.NVarChar, file.path)
+            .input('fileSize', sql.Int, file.size)
+            .input('mimeType', sql.NVarChar, file.mimetype)
+            .input('uploadedBy', sql.Int, decoded.userId)
+            .query(`
+              INSERT INTO TaskPhotos (taskId, historyId, fileName, filePath, fileSize, mimeType, uploadedBy)
+              VALUES (@taskId, @historyId, @fileName, @filePath, @fileSize, @mimeType, @uploadedBy)
+            `);
+        }
+      }
     }
 
     res.json({ 
@@ -537,25 +579,52 @@ router.get('/:equipmentId/:discipline/history', async (req, res) => {
       .input('discipline', sql.NVarChar, discipline)
       .query(`
         SELECT 
+          th.id as historyId,
           th.previousProgress,
           th.newProgress,
           th.observations,
           th.createdAt as updatedAt,
-          u.name as updatedBy
+          u.name as updatedBy,
+          tp.fileName,
+          tp.filePath,
+          tp.fileSize,
+          tp.mimeType
         FROM EquipmentTasks et
         JOIN TaskHistory th ON et.id = th.taskId
         JOIN Users u ON th.userId = u.id
+        LEFT JOIN TaskPhotos tp ON th.id = tp.historyId
         WHERE et.equipmentId = @equipmentId AND et.discipline = @discipline
-        ORDER BY th.createdAt DESC
+        ORDER BY th.createdAt DESC, tp.uploadedAt DESC
       `);
 
-    const history = result.recordset.map(item => ({
-      previousProgress: item.previousProgress,
-      newProgress: item.newProgress,
-      observations: item.observations,
-      updatedAt: item.updatedAt,
-      updatedBy: item.updatedBy
-    }));
+    // Agrupar por entrada de histórico
+    const historyMap = new Map();
+    
+    result.recordset.forEach(row => {
+      if (!historyMap.has(row.historyId)) {
+        historyMap.set(row.historyId, {
+          previousProgress: row.previousProgress,
+          newProgress: row.newProgress,
+          observations: row.observations,
+          updatedAt: row.updatedAt,
+          updatedBy: row.updatedBy,
+          photos: []
+        });
+      }
+      
+      // Adicionar foto se existir
+      if (row.fileName) {
+        const history = historyMap.get(row.historyId);
+        history.photos.push({
+          fileName: row.fileName,
+          filePath: row.filePath,
+          fileSize: row.fileSize,
+          mimeType: row.mimeType
+        });
+      }
+    });
+
+    const history = Array.from(historyMap.values());
 
     res.json(history);
 

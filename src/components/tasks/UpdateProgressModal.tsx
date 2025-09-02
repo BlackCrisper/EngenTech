@@ -65,15 +65,25 @@ export const UpdateProgressModal = ({
 
   const startCamera = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } // Usar câmera traseira em dispositivos móveis
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'environment' // Usar câmera traseira se disponível
+        }
       });
+      
       setStream(mediaStream);
       setShowCamera(true);
       
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
+      // Aguardar o vídeo estar pronto antes de definir srcObject
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+          videoRef.current.play().catch(console.error);
+        }
+      }, 100);
+      
     } catch (error) {
       console.error('Erro ao acessar câmera:', error);
       toast.error('Não foi possível acessar a câmera');
@@ -337,9 +347,20 @@ export const UpdateProgressModal = ({
                     ref={videoRef}
                     autoPlay
                     playsInline
-                    className="w-full h-64 object-cover rounded"
+                    muted
+                    className="w-full h-64 object-cover rounded bg-gray-900"
+                    onLoadedMetadata={() => {
+                      if (videoRef.current) {
+                        videoRef.current.play().catch(console.error);
+                      }
+                    }}
                   />
                   <canvas ref={canvasRef} className="hidden" />
+                  
+                  {/* Indicador de status da câmera */}
+                  <div className="absolute top-2 left-2">
+                    <div className="bg-red-500 w-3 h-3 rounded-full animate-pulse"></div>
+                  </div>
                   
                   <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
                     <Button
