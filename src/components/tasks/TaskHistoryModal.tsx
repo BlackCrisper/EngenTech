@@ -262,19 +262,42 @@ export default function TaskHistoryModal({
                           <span className="text-sm font-medium text-gray-600">Fotos:</span>
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                          {entry.photos.map((photo, photoIndex) => (
-                            <div key={photoIndex} className="relative group">
-                              <img
-                                src={`/uploads/${photo.fileName}`}
-                                alt={`Foto ${photoIndex + 1}`}
-                                className="w-full h-24 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
-                                onClick={() => window.open(`/uploads/${photo.fileName}`, '_blank')}
-                              />
-                              <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-1 py-0.5 rounded">
-                                {photo.fileName}
+                          {entry.photos.map((photo, photoIndex) => {
+                            // Usar URL absoluta do backend para evitar problemas de CORS e porta
+                            const imageUrl = `http://localhost:3010/${photo.filePath}`;
+                            console.log(`🖼️ Renderizando foto ${photoIndex + 1}:`, {
+                              fileName: photo.fileName,
+                              filePath: photo.filePath,
+                              imageUrl: imageUrl,
+                              backendUrl: `http://localhost:3010/${photo.filePath}`
+                            });
+                            
+                            return (
+                              <div key={photoIndex} className="relative group">
+                                <img
+                                  src={imageUrl}
+                                  alt={`Foto ${photoIndex + 1}`}
+                                  className="w-full h-24 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                                  onClick={() => window.open(imageUrl, '_blank')}
+                                  onError={(e) => {
+                                    console.error('❌ Erro ao carregar imagem:', photo.filePath);
+                                    console.error('🔗 URL tentada:', imageUrl);
+                                    console.error('🌐 URL completa:', imageUrl);
+                                    console.error('📁 Dados da foto:', photo);
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                  }}
+                                  onLoad={() => {
+                                    console.log('✅ Imagem carregada com sucesso:', photo.filePath);
+                                    console.log('🔗 URL que funcionou:', imageUrl);
+                                  }}
+                                />
+                                <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-1 py-0.5 rounded">
+                                  {photo.fileName}
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     )}

@@ -477,11 +477,14 @@ router.post('/update', upload.array('photos', 10), async (req, res) => {
       // Salvar fotos se houver
       if (req.files && req.files.length > 0) {
         for (const file of req.files) {
+          // Obter caminho relativo para salvar no banco
+          const relativePath = `uploads/${file.filename}`;
+          
           await pool.request()
             .input('taskId', sql.Int, taskIdToUpdate)
             .input('historyId', sql.Int, historyId)
-            .input('fileName', sql.NVarChar, file.originalname)
-            .input('filePath', sql.NVarChar, file.path)
+            .input('fileName', sql.NVarChar, file.filename)
+            .input('filePath', sql.NVarChar, relativePath)
             .input('fileSize', sql.Int, file.size)
             .input('mimeType', sql.NVarChar, file.mimetype)
             .input('uploadedBy', sql.Int, decoded.userId)
@@ -538,11 +541,14 @@ router.post('/update', upload.array('photos', 10), async (req, res) => {
       // Salvar fotos se houver
       if (req.files && req.files.length > 0) {
         for (const file of req.files) {
+          // Obter caminho relativo para salvar no banco
+          const relativePath = `uploads/${file.filename}`;
+          
           await pool.request()
             .input('taskId', sql.Int, newTaskId)
             .input('historyId', sql.Int, historyId)
-            .input('fileName', sql.NVarChar, file.originalname)
-            .input('filePath', sql.NVarChar, file.path)
+            .input('fileName', sql.NVarChar, file.filename)
+            .input('filePath', sql.NVarChar, relativePath)
             .input('fileSize', sql.Int, file.size)
             .input('mimeType', sql.NVarChar, file.mimetype)
             .input('uploadedBy', sql.Int, decoded.userId)

@@ -26,6 +26,17 @@ const storage = multer.diskStorage({
   }
 });
 
+// Função para obter caminho relativo
+const getRelativePath = (filePath) => {
+  // Extrair apenas a parte relativa: uploads/nome-do-arquivo
+  const parts = filePath.split(path.sep);
+  const uploadsIndex = parts.findIndex(part => part === 'uploads');
+  if (uploadsIndex !== -1) {
+    return parts.slice(uploadsIndex).join('/');
+  }
+  return filePath;
+};
+
 // Filtro de arquivos
 const fileFilter = (req, file, cb) => {
   // Permitir apenas imagens
