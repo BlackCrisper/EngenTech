@@ -30,7 +30,14 @@ api.interceptors.response.use(
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
+    } else if (error.response?.status >= 500) {
+      // Erro do servidor
+      error.message = 'Erro interno do servidor. Tente novamente em alguns instantes.';
+    } else if (error.code === 'ECONNABORTED') {
+      // Timeout
+      error.message = 'Tempo limite excedido. Verifique sua conexão e tente novamente.';
     }
+    
     return Promise.reject(error);
   }
 );

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Eye, EyeOff, Lock, User } from "lucide-react";
+import { Eye, EyeOff, Lock, User, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { authService } from "@/services/api";
@@ -39,7 +39,23 @@ const Login = () => {
       navigate("/");
     } catch (error: any) {
       console.error('Erro no login:', error);
-      toast.error(error.response?.data?.error || 'Erro ao fazer login');
+      
+      // Tratamento específico para diferentes tipos de erro
+      let errorMessage = 'Erro ao fazer login';
+      
+      if (error.response?.status === 401) {
+        errorMessage = 'Usuário ou senha incorretos';
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response?.data?.error || 'Dados de login inválidos';
+      } else if (error.response?.status >= 500) {
+        errorMessage = 'Erro interno do servidor. Tente novamente em alguns instantes.';
+      } else if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Tempo limite excedido. Verifique sua conexão e tente novamente.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -59,133 +75,125 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
-      <div className="w-full max-w-md space-y-6">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
+      <div className="w-full max-w-md space-y-8">
         
-        {/* Logo */}
-        <div className="text-center space-y-4">
+        {/* Logo e Título */}
+        <div className="text-center space-y-6">
           <div className="flex justify-center">
-            <div className="flex items-center gap-3 p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
-              <div className="flex items-center justify-center w-12 h-12 bg-orange-500 rounded-lg">
-                <svg className="h-8 w-8 text-white" viewBox="0 0 24 24" fill="currentColor">
-                  {/* Engrenagem externa */}
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
-                  {/* Engrenagem interna */}
-                  <path d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/>
-                  {/* Barras de progresso no centro */}
-                  <rect x="9.5" y="9" width="1.5" height="3" fill="white"/>
-                  <rect x="11.25" y="8" width="1.5" height="5" fill="white"/>
-                  <rect x="13" y="7" width="1.5" height="7" fill="white"/>
-                </svg>
+            <div className="flex items-center gap-4 p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 shadow-2xl">
+              {/* Logo Minimalista */}
+              <div className="relative">
+                <div className="w-16 h-16 bg-gradient-to-br from-slate-200 to-slate-400 rounded-xl flex items-center justify-center shadow-lg">
+                  <div className="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center">
+                    <div className="w-4 h-4 bg-slate-200 rounded-sm"></div>
+                  </div>
+                </div>
+                {/* Elementos decorativos */}
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-slate-300 rounded-full opacity-60"></div>
+                <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-slate-400 rounded-full opacity-40"></div>
               </div>
+              
               <div className="text-left">
-                <h1 className="text-2xl font-bold text-gray-800">EngTech</h1>
-                <p className="text-sm text-gray-600">Sistema Industrial</p>
+                <h1 className="text-3xl font-bold text-white tracking-tight">EngTech</h1>
+                <p className="text-sm text-slate-300 font-medium">Sistema Industrial</p>
               </div>
             </div>
           </div>
+          
+      
         </div>
 
-        {/* Login Form */}
-        <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
+        {/* Formulário de Login */}
+        <Card className="bg-white/5 backdrop-blur-sm border-white/10 shadow-2xl">
           <CardHeader className="space-y-2 pb-6">
-            <CardTitle className="text-2xl font-bold text-center text-gray-800">
-              Bem-vindo
+            <CardTitle className="text-xl font-semibold text-center text-white">
+              Acesso ao Sistema
             </CardTitle>
-            <CardDescription className="text-center text-gray-600">
-              Faça login para acessar o sistema
+            <CardDescription className="text-center text-slate-400">
+              Digite seu usuário e senha para continuar
             </CardDescription>
           </CardHeader>
+          
           <CardContent className="space-y-6">
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-5">
+              {/* Campo Usuário */}
               <div className="space-y-2">
-                <Label htmlFor="username" className="text-sm font-medium text-gray-700">
-                  Nome de Usuário
+                <Label htmlFor="username" className="text-sm font-medium text-slate-200">
+                  Usuário
                 </Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <Input
                     id="username"
                     name="username"
                     type="text"
-                    placeholder="Digite seu nome de usuário"
-                    className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                     value={formData.username}
                     onChange={handleInputChange}
                     onKeyPress={handleKeyPress}
-                    required
+                    placeholder="Digite seu usuário"
+                    className="pl-10 bg-slate-800/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-slate-400 focus:ring-slate-400 h-12"
+                    disabled={isLoading}
                   />
                 </div>
               </div>
 
+              {/* Campo Senha */}
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="password" className="text-sm font-medium text-slate-200">
                   Senha
                 </Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <Input
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Digite sua senha"
-                    className="pl-10 pr-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                     value={formData.password}
                     onChange={handleInputChange}
                     onKeyPress={handleKeyPress}
-                    required
+                    placeholder="Digite sua senha"
+                    className="pl-10 pr-10 bg-slate-800/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-slate-400 focus:ring-slate-400 h-12"
+                    disabled={isLoading}
                   />
-                  <Button
+                  <button
                     type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
+                    disabled={isLoading}
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-400" />
+                      <EyeOff className="w-4 h-4" />
                     ) : (
-                      <Eye className="h-4 w-4 text-gray-400" />
+                      <Eye className="w-4 h-4" />
                     )}
-                  </Button>
+                  </button>
                 </div>
               </div>
 
+              {/* Botão de Login */}
               <Button
                 type="submit"
-                className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-medium shadow-lg"
+                className="w-full bg-gradient-to-r from-slate-700 to-slate-600 hover:from-slate-600 hover:to-slate-500 text-white font-medium h-12 shadow-lg transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
                 disabled={isLoading}
               >
                 {isLoading ? (
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Entrando...
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Entrando...</span>
                   </div>
                 ) : (
-                  "Entrar"
+                  <span>Entrar no Sistema</span>
                 )}
               </Button>
             </form>
-
-            <div className="text-center space-y-3">
-              <p className="text-xs text-gray-500">
-                Esqueceu sua senha? Entre em contato com o administrador
-              </p>
-              <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
-                <Building2 className="h-3 w-3" />
-                <span>Mizu Cimentos - Sistema Industrial</span>
-              </div>
-            </div>
           </CardContent>
         </Card>
 
         {/* Footer */}
-        <div className="text-center space-y-2">
-          <p className="text-xs text-gray-500">
-            EngTech v1.0 - Sistema de Gestão Industrial
-          </p>
-          <p className="text-xs text-gray-400">
-            © 2024 Mizu Cimentos. Todos os direitos reservados.
+        <div className="text-center">
+          <p className="text-xs text-slate-500">
+            © 2024 EngTech. Todos os direitos reservados.
           </p>
         </div>
       </div>

@@ -26,10 +26,6 @@ if (fs.existsSync(envPath)) {
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-
-
-
-
 // Middleware
 app.use(cors({
   origin: ['http://localhost:8080', 'http://10.11.100.3:8080', 'http://10.11.3.149:8080'],

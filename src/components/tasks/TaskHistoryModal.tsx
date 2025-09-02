@@ -4,30 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { History, Calendar, User, Image as ImageIcon, Clock, FileText, Trash2, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
-import { tasksService } from '@/services/api';
+import { tasksService, TaskHistory } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { ImageGallery } from '@/components/ui/image-gallery';
 
 interface TaskHistoryModalProps {
   isOpen: boolean;
   onClose: () => void;
   task: any;
-}
-
-interface HistoryEntry {
-  id: number;
-  action: string;
-  previousProgress: number;
-  newProgress: number;
-  previousStatus: string;
-  newStatus: string;
-  observations: string;
-  actualHours: number;
-  photos: string;
-  createdAt: string;
-  ipAddress: string;
-  updatedByUsername: string;
-  updatedByRole: string;
 }
 
 export default function TaskHistoryModal({
@@ -37,7 +22,7 @@ export default function TaskHistoryModal({
 }: TaskHistoryModalProps) {
   const { toast } = useToast();
   const { user } = useAuth();
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [history, setHistory] = useState<TaskHistory[]>([]);
   const [loading, setLoading] = useState(false);
   const [deletingHistoryId, setDeletingHistoryId] = useState<number | null>(null);
 
@@ -141,13 +126,17 @@ export default function TaskHistoryModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh]">
+      <DialogContent className="max-w-4xl max-h-[90vh]" aria-describedby="task-history-description">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <History className="w-5 h-5" />
             Histórico de Progresso - {task?.name}
           </DialogTitle>
         </DialogHeader>
+
+        <div id="task-history-description" className="sr-only">
+          Modal para visualizar o histórico completo de progresso e alterações da tarefa
+        </div>
 
         <div className="space-y-4">
           {/* Informações da Tarefa */}
@@ -196,11 +185,8 @@ export default function TaskHistoryModal({
                                   <div className="flex items-center gap-2">
                                     <User className="w-4 h-4 text-gray-500" />
                                     <span className="text-sm text-gray-600">
-                                      {entry.updatedByUsername}
+                                      {entry.userName}
                                     </span>
-                                    <Badge variant="outline" className="text-xs">
-                                      {entry.updatedByRole}
-                                    </Badge>
                                     {canDeleteHistory() && (
                                       <Button
                                         type="button"
@@ -224,21 +210,12 @@ export default function TaskHistoryModal({
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-gray-600">Progresso:</span>
-                        <span className="font-medium">{entry.previousProgress}%</span>
-                        <span className={getProgressChangeColor(entry.previousProgress, entry.newProgress)}>
-                          {getProgressChangeIcon(entry.previousProgress, entry.newProgress)}
+                        <span className="font-medium">{entry.previousProgress || 0}%</span>
+                        <span className={getProgressChangeColor(entry.previousProgress || 0, entry.newProgress || 0)}>
+                          {getProgressChangeIcon(entry.previousProgress || 0, entry.newProgress || 0)}
                         </span>
-                        <span className="font-medium">{entry.newProgress}%</span>
+                        <span className="font-medium">{entry.newProgress || 0}%</span>
                       </div>
-                      
-                      {entry.actualHours > 0 && (
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-gray-500" />
-                          <span className="text-sm">
-                            +{entry.actualHours}h trabalhadas
-                          </span>
-                        </div>
-                      )}
                     </div>
 
                     {/* Mudança de Status */}
@@ -246,11 +223,11 @@ export default function TaskHistoryModal({
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-gray-600">Status:</span>
                         <Badge variant="outline" className="text-xs">
-                          {getStatusText(entry.previousStatus)}
+                          {getStatusText(entry.previousStatus || '')}
                         </Badge>
                         <ArrowRight className="w-4 h-4 text-gray-500" />
-                        <Badge className={getStatusColor(entry.newStatus)}>
-                          {getStatusText(entry.newStatus)}
+                        <Badge className={getStatusColor(entry.newStatus || '')}>
+                          {getStatusText(entry.newStatus || '')}
                         </Badge>
                       </div>
                     )}
@@ -271,28 +248,18 @@ export default function TaskHistoryModal({
                     {/* Fotos */}
                     {entry.photos && (
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <ImageIcon className="w-4 h-4 text-gray-500" />
-                          <span className="text-sm font-medium text-gray-600">Fotos:</span>
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                          {JSON.parse(entry.photos).map((photo: string, photoIndex: number) => (
-                            <div key={photoIndex} className="relative group">
-                              <img
-                                src={photo}
-                                alt={`Foto ${photoIndex + 1}`}
-                                className="w-full h-20 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
-                                onClick={() => window.open(photo, '_blank')}
-                              />
-                            </div>
-                          ))}
-                        </div>
+                        <ImageGallery
+                          images={JSON.parse(entry.photos)}
+                          title="Fotos"
+                          maxColumns={4}
+                          showCount={true}
+                        />
                       </div>
                     )}
 
                     {/* Informações Adicionais */}
                     <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t">
-                      <span>IP: {entry.ipAddress || 'N/A'}</span>
+                      <span>Usuário: {entry.userName}</span>
                       <span>ID: #{entry.id}</span>
                     </div>
                   </div>
