@@ -21,7 +21,7 @@ import {
   Upload,
   X
 } from 'lucide-react';
-import UpdateProgressModal from '@/components/tasks/UpdateProgressModal';
+import { UpdateProgressModal } from '@/components/tasks/UpdateProgressModal';
 import TaskHistoryModal from '@/components/tasks/TaskHistoryModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

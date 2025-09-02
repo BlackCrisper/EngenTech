@@ -36,6 +36,14 @@ const navigationItems = [
   { icon: Settings, label: "Configurações", href: "/settings", resource: "settings" },
 ];
 
+// Itens de navegação específicos para operadores
+const operatorNavigationItems = [
+  { icon: Home, label: "Dashboard", href: "/", resource: "dashboard" },
+  { icon: MapPin, label: "Áreas do Projeto", href: "/operator/areas", resource: "operator-areas" },
+  { icon: FileText, label: "Relatórios", href: "/reports", resource: "reports" },
+  { icon: PieChart, label: "Relatórios Avançados", href: "/advanced-reports", resource: "reports" },
+];
+
 export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const location = useLocation();
   const { user } = useAuth();
@@ -88,6 +96,27 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           {/* Navigation */}
           <nav className="flex-1 space-y-1 p-4">
             {(() => {
+              // Se for operador, mostrar apenas as opções de operador
+              if (user?.role === 'operator') {
+                return operatorNavigationItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                      "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                      location.pathname === item.href
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground"
+                    )}
+                    onClick={onClose}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
+                ));
+              }
+
               // Se for admin, mostrar apenas as opções de admin
               if (user?.role === 'admin') {
                 const adminItems = [

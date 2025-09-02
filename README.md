@@ -301,6 +301,40 @@ pm2 show engentech-frontend
    netstat -tulpn | grep :8080
    ```
 
+## 👷 **Funcionalidades para Operadores**
+
+### **Interface Mobile-First**
+O sistema foi desenvolvido com foco especial em dispositivos móveis, oferecendo uma experiência otimizada para operadores em campo:
+
+- **Grid responsivo** que se adapta automaticamente ao tamanho da tela
+- **Navegação intuitiva** com breadcrumbs e botões de voltar
+- **Filtros colapsáveis** para economizar espaço em telas pequenas
+- **Botões touch-friendly** com tamanho adequado para dedos
+
+### **Fluxo de Trabalho Simplificado**
+1. **Áreas do Projeto** → Visualização em grid com busca e filtros
+2. **Equipamentos da Área** → Lista filtrada por status e busca textual
+3. **Tarefas do Equipamento** → Filtradas automaticamente pelo setor do usuário
+4. **Atualização de Progresso** → Modal completo com câmera e anexos
+
+### **Sistema de Câmera Integrado**
+- **Captura direta** de fotos usando a câmera do dispositivo
+- **Upload de imagens** existentes da galeria
+- **Preview em tempo real** das imagens anexadas
+- **Gerenciamento** de fotos com remoção individual
+
+### **Controle de Acesso Inteligente**
+- **Filtro automático** de tarefas por disciplina do usuário
+- **Acesso restrito** apenas às funcionalidades necessárias
+- **Histórico completo** de todas as atualizações realizadas
+- **Validação de dados** antes do envio
+
+### **Documentação Completa**
+- **Guia do Operador** (`OPERATOR_GUIDE.md`) com instruções detalhadas
+- **Screenshots e exemplos** de uso
+- **Solução de problemas** comuns
+- **Dicas de otimização** para dispositivos móveis
+
 ## 📝 Licença
 
 Este projeto está sob a licença MIT.

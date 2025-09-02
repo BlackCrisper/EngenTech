@@ -20,6 +20,9 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Projects from "./pages/Projects";
 import ProjectDetails from "./pages/ProjectDetails";
 import ProjectUsers from "./pages/ProjectUsers";
+import OperatorAreas from "./pages/OperatorAreas";
+import OperatorEquipment from "./pages/OperatorEquipment";
+import OperatorTasks from "./pages/OperatorTasks";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -121,6 +124,33 @@ const EngineerRoute = ({ children }: { children: React.ReactNode }) => {
 
   // Verificar se o usuário é engenheiro, supervisor ou admin
   if (!['engineer', 'supervisor', 'admin'].includes(user?.role || '')) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+// Componente para rotas de operador
+const OperatorRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, isLoading, user } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Verificar se o usuário é operador
+  if (user?.role !== 'operator') {
     return <Navigate to="/" replace />;
   }
 
@@ -253,6 +283,24 @@ const AppRoutes = () => (
         <SESMT />
       </SecurityRoute>
     } />
+    
+    {/* Rotas para Operadores */}
+    <Route path="/operator/areas" element={
+      <OperatorRoute>
+        <OperatorAreas />
+      </OperatorRoute>
+    } />
+    <Route path="/operator/areas/:areaId/equipment" element={
+      <OperatorRoute>
+        <OperatorEquipment />
+      </OperatorRoute>
+    } />
+    <Route path="/operator/equipment/:equipmentId/tasks" element={
+      <OperatorRoute>
+        <OperatorTasks />
+      </OperatorRoute>
+    } />
+    
     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
     <Route path="*" element={<NotFound />} />
   </Routes>

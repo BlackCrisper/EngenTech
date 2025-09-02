@@ -3,6 +3,7 @@ import { getConnection, sql } from '../config/database.js';
 import { config } from '../config/env.js';
 import jwt from 'jsonwebtoken';
 import { authenticateToken } from '../middleware/auth.js';
+import upload from '../middleware/upload.js';
 
 const router = express.Router();
 
@@ -371,20 +372,53 @@ router.put('/:equipmentId/:discipline', async (req, res) => {
 });
 
 // Atualizar progresso com upload de fotos
-router.post('/update', async (req, res) => {
+router.post('/update', upload.array('photos', 10), async (req, res) => {
   try {
+    console.log('📝 Recebendo requisição para atualizar progresso:');
+    console.log('📋 Body:', req.body);
+    console.log('📁 Files:', req.files);
+    console.log('🔑 Headers:', req.headers);
+    
     const { equipmentId, discipline, currentProgress, observations, taskId } = req.body;
     const token = req.headers.authorization?.split(' ')[1];
 
+    console.log('🔍 Dados extraídos:');
+    console.log('- equipmentId:', equipmentId, 'tipo:', typeof equipmentId);
+    console.log('- discipline:', discipline, 'tipo:', typeof discipline);
+    console.log('- currentProgress:', currentProgress, 'tipo:', typeof currentProgress);
+    console.log('- observations:', observations, 'tipo:', typeof observations);
+    console.log('- taskId:', taskId, 'tipo:', typeof taskId);
+
     if (!token) {
+      console.log('❌ Token não fornecido');
       return res.status(401).json({ error: 'Token não fornecido' });
     }
 
-    const decoded = jwt.verify(token, config.JWT_SECRET);
+    // Validar campos obrigatórios
+    if (!equipmentId) {
+      console.log('❌ equipmentId não fornecido');
+      return res.status(400).json({ error: 'equipmentId é obrigatório' });
+    }
 
-    if (!currentProgress || currentProgress < 0 || currentProgress > 100) {
+    if (!discipline) {
+      console.log('❌ discipline não fornecido');
+      return res.status(400).json({ error: 'discipline é obrigatório' });
+    }
+
+    if (currentProgress === undefined || currentProgress === null) {
+      console.log('❌ currentProgress não fornecido');
+      return res.status(400).json({ error: 'currentProgress é obrigatório' });
+    }
+
+    if (currentProgress < 0 || currentProgress > 100) {
+      console.log('❌ currentProgress fora do range válido:', currentProgress);
       return res.status(400).json({ error: 'Progresso deve estar entre 0 e 100' });
     }
+
+    console.log('✅ Validação dos campos passou');
+
+    const decoded = jwt.verify(token, config.JWT_SECRET);
+    console.log('🔓 Token decodificado, userId:', decoded.userId);
 
     const pool = await getConnection();
 
