@@ -580,59 +580,60 @@ router.get('/:equipmentId/:discipline/history', async (req, res) => {
     const { equipmentId, discipline } = req.params;
     const pool = await getConnection();
 
-    const result = await pool.request()
+    // Primeiro, buscar todas as entradas de histórico para este equipamento/disciplina
+    const historyResult = await pool.request()
       .input('equipmentId', sql.Int, equipmentId)
       .input('discipline', sql.NVarChar, discipline)
       .query(`
-        SELECT 
+        SELECT DISTINCT
           th.id as historyId,
           th.previousProgress,
           th.newProgress,
           th.observations,
           th.createdAt as updatedAt,
-          u.name as updatedBy,
-          tp.fileName,
-          tp.filePath,
-          tp.fileSize,
-          tp.mimeType
+          u.name as updatedBy
         FROM EquipmentTasks et
         JOIN TaskHistory th ON et.id = th.taskId
         JOIN Users u ON th.userId = u.id
-        LEFT JOIN TaskPhotos tp ON th.id = tp.historyId
         WHERE et.equipmentId = @equipmentId AND et.discipline = @discipline
-        ORDER BY th.createdAt DESC, tp.uploadedAt DESC
+        ORDER BY th.createdAt DESC
       `);
 
-    // Agrupar por entrada de histórico
-    const historyMap = new Map();
+    // Para cada entrada de histórico, buscar suas fotos específicas
+    const historyWithPhotos = [];
     
-    result.recordset.forEach(row => {
-      if (!historyMap.has(row.historyId)) {
-        historyMap.set(row.historyId, {
-          previousProgress: row.previousProgress,
-          newProgress: row.newProgress,
-          observations: row.observations,
-          updatedAt: row.updatedAt,
-          updatedBy: row.updatedBy,
-          photos: []
-        });
-      }
-      
-      // Adicionar foto se existir
-      if (row.fileName) {
-        const history = historyMap.get(row.historyId);
-        history.photos.push({
-          fileName: row.fileName,
-          filePath: row.filePath,
-          fileSize: row.fileSize,
-          mimeType: row.mimeType
-        });
-      }
-    });
+    for (const historyEntry of historyResult.recordset) {
+      const photosResult = await pool.request()
+        .input('historyId', sql.Int, historyEntry.historyId)
+        .query(`
+          SELECT 
+            fileName,
+            filePath,
+            fileSize,
+            mimeType
+          FROM TaskPhotos
+          WHERE historyId = @historyId
+          ORDER BY uploadedAt DESC
+        `);
 
-    const history = Array.from(historyMap.values());
+      const historyItem = {
+        previousProgress: historyEntry.previousProgress,
+        newProgress: historyEntry.newProgress,
+        observations: historyEntry.observations,
+        updatedAt: historyEntry.updatedAt,
+        updatedBy: historyEntry.updatedBy,
+        photos: photosResult.recordset.map(photo => ({
+          fileName: photo.fileName,
+          filePath: photo.filePath,
+          fileSize: photo.fileSize,
+          mimeType: photo.mimeType
+        }))
+      };
 
-    res.json(history);
+      historyWithPhotos.push(historyItem);
+    }
+
+    res.json(historyWithPhotos);
 
   } catch (error) {
     console.error('Erro ao buscar histórico:', error);
