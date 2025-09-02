@@ -446,14 +446,7 @@ export default function Areas() {
 
                   {/* Ações */}
                   <div className="flex justify-end space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate(`/areas/${area.id}`)}
-                    >
-                      <Eye className="w-4 h-4 mr-1" />
-                      Visualizar
-                    </Button>
+              
                     <UpdateGuard resource="areas">
                       <Button
                         variant="outline"
